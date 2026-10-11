@@ -2,8 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mayank's 24/7 Cloud Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0b0f19" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Cloud Host" />
+  <link rel="manifest" href="./manifest.json" />
+  <title>Mayank's 24/7 Cloud Host Control</title>
   <style>
     :root {
       --bg: #0b0f19;
@@ -13,6 +18,7 @@
       --muted: #94a3b8;
       --accent1: #6366f1;
       --accent2: #10b981;
+      --warn: #f59e0b;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -23,10 +29,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 20px;
     }
-    .container { max-width: 760px; width: 100%; }
-    .header { text-align: center; margin-bottom: 32px; }
+    .container { max-width: 780px; width: 100%; }
+    .header { text-align: center; margin-bottom: 24px; }
     .badge {
       display: inline-flex; align-items: center; gap: 8px;
       background: rgba(16, 185, 129, 0.12); color: #34d399;
@@ -35,46 +41,107 @@
       margin-bottom: 12px;
     }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; }
-    h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
-    .sub { color: var(--muted); font-size: 14px; margin-top: 6px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 13px; margin-top: 6px; }
+    .sync-panel {
+      background: linear-gradient(145deg, #162038, #111827);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .sync-top {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px; margin-bottom: 14px;
+    }
+    .sync-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .sync-desc { color: var(--muted); font-size: 13px; line-height: 1.45; margin-bottom: 14px; }
+    .sync-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      text-align: center; text-decoration: none; border: none; cursor: pointer;
+      background: var(--accent1); color: #fff; font-weight: 600; font-size: 14px;
+      padding: 11px 16px; border-radius: 10px; transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn.green { background: var(--accent2); }
+    .btn.outline {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn.outline.active-warn {
+      background: rgba(245, 158, 11, 0.16);
+      border-color: rgba(245, 158, 11, 0.5);
+      color: #fbbf24;
+    }
+    .btn.outline.battery-saver {
+      background: rgba(16, 185, 129, 0.14);
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #34d399;
+    }
+    .meta-row {
+      margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.07);
+      font-family: monospace; font-size: 12px; color: #cbd5e1;
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px; }
     .card {
       background: var(--card); border: 1px solid var(--border);
-      border-radius: 16px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between;
+      border-radius: 16px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;
       transition: transform 0.15s ease, border-color 0.15s ease;
     }
     .card:hover { transform: translateY(-2px); border-color: var(--accent1); }
-    .tool-tag { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #818cf8; margin-bottom: 8px; }
-    .card h2 { font-size: 20px; margin-bottom: 8px; }
-    .card p { color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+    .tool-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #818cf8; margin-bottom: 8px; }
+    .card h2 { font-size: 19px; margin-bottom: 8px; }
+    .card p { color: var(--muted); font-size: 13px; line-height: 1.5; margin-bottom: 16px; }
     .url-box {
       background: rgba(0,0,0,0.3); border: 1px solid var(--border);
-      padding: 10px 12px; border-radius: 8px; font-family: monospace; font-size: 12px;
-      color: #cbd5e1; word-break: break-all; margin-bottom: 16px;
+      padding: 9px 11px; border-radius: 8px; font-family: monospace; font-size: 11.5px;
+      color: #cbd5e1; word-break: break-all; margin-bottom: 14px;
     }
-    .btn {
-      display: inline-block; text-align: center; text-decoration: none;
-      background: var(--accent1); color: #fff; font-weight: 600; font-size: 14px;
-      padding: 12px 18px; border-radius: 10px; transition: opacity 0.15s;
-    }
-    .btn.green { background: var(--accent2); }
-    .btn:hover { opacity: 0.92; }
-    .footer { text-align: center; margin-top: 28px; color: var(--muted); font-size: 12px; }
+    .footer { text-align: center; margin-top: 24px; color: var(--muted); font-size: 12px; line-height: 1.6; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="badge"><span class="dot"></span> <span id="host-name">24/7 Cloud Tunnel Active</span></div>
-      <h1>Mayank's Cloud Applications</h1>
+      <div class="badge"><span class="dot"></span> <span id="host-name">Samsung Galaxy Z Fold3 • 24/7 Cloud Host</span></div>
+      <h1>Cloud Host & GitHub Control</h1>
       <p class="sub" id="updated-at">Loading live tunnel endpoints...</p>
     </div>
+
+    <!-- Phone Battery Saver & GitHub Sync Control Panel -->
+    <div class="sync-panel">
+      <div class="sync-top">
+        <div class="sync-title">🔋 Phone Battery Saver &amp; GitHub Sync</div>
+        <button id="btn-toggle-autosync" class="btn outline battery-saver" onclick="toggleAutoSync()">
+          🔋 Auto-Sync: OFF (Battery Saver)
+        </button>
+      </div>
+      <p class="sync-desc">
+        Keep <strong>Auto-Sync OFF</strong> when using your phone without a charger (0% background polling drain). Tap <strong>Pull GitHub Updates Now</strong> whenever you push tool updates or new Antigravity Brain plans.
+      </p>
+      <div class="sync-actions">
+        <button id="btn-sync-now" class="btn" onclick="syncGithubNow()">
+          ↻ Pull GitHub Updates Now
+        </button>
+        <button class="btn outline" onclick="refreshSyncStatus()">
+          Check Status
+        </button>
+      </div>
+      <div class="meta-row">
+        <span id="commit-meta">Commits: Connecting to phone host...</span>
+        <span id="last-sync-meta">Mode: Manual Only (0% Idle Drain)</span>
+      </div>
+    </div>
+
     <div class="grid">
       <div class="card">
         <div>
           <div class="tool-tag">Tool 1 • Port 8080</div>
           <h2>AvatarOps Engine</h2>
-          <p>AI Influencer Multi-Avatar Automation Console, Scheduler, and Persona Voice Engine.</p>
+          <p>AI Influencer Multi-Avatar Automation Console, Antigravity Brain Sync, and Scheduler.</p>
           <div class="url-box" id="url-avatar">Resolving tunnel...</div>
         </div>
         <a id="btn-avatar" href="./avatar-ops/" class="btn" target="_blank">Launch AvatarOps →</a>
@@ -82,31 +149,95 @@
       <div class="card">
         <div>
           <div class="tool-tag" style="color:#34d399;">Tool 2 • Port 5001</div>
-          <h2>Nifty Analyzer</h2>
-          <p>Institutional Stock & Nifty 50 Terminal, Expert Strategies, Options Desk, and Screener.</p>
+          <h2>Nifty 50 Analyzer</h2>
+          <p>Institutional Stock &amp; Nifty 50 Terminal, Expert Strategies, Options Desk, and Screener.</p>
           <div class="url-box" id="url-nifty">Resolving tunnel...</div>
         </div>
         <a id="btn-nifty" href="./nifty-analyzer/" class="btn green" target="_blank">Launch Nifty Analyzer →</a>
       </div>
     </div>
     <div class="footer">
-      Permanent Bookmark URLs: <code>/cloud-portal/avatar-ops</code> &bull; <code>/cloud-portal/nifty-analyzer</code>
+      📱 Tip: In Chrome on your phone, tap <strong>⋮ &rarr; Add to Home screen</strong> to install this control center as a native app.
     </div>
   </div>
   <script>
+    let avatarBaseUrl = "";
+
+    function renderSyncUI(gs) {
+      if (!gs) return;
+      const tBtn = document.getElementById("btn-toggle-autosync");
+      const cMeta = document.getElementById("commit-meta");
+      const lMeta = document.getElementById("last-sync-meta");
+      if (gs.auto_sync_enabled) {
+        tBtn.textContent = "🔄 Auto-Sync: ON (Every 60s)";
+        tBtn.className = "btn outline active-warn";
+      } else {
+        tBtn.textContent = "🔋 Auto-Sync: OFF (Battery Saver)";
+        tBtn.className = "btn outline battery-saver";
+      }
+      cMeta.textContent = `AvatarOps: #${gs.avatar_ops_commit || 'main'} • Nifty: #${gs.nifty_commit || 'main'}`;
+      lMeta.textContent = gs.last_sync_at ? `Last Pull: ${gs.last_sync_at}` : gs.mode_label;
+    }
+
+    async function refreshSyncStatus() {
+      if (!avatarBaseUrl) return;
+      try {
+        const r = await fetch(avatarBaseUrl + "/api/github/status");
+        const gs = await r.json();
+        renderSyncUI(gs);
+      } catch (e) {
+        document.getElementById("commit-meta").textContent = "Host reachable via tunnel";
+      }
+    }
+
+    async function toggleAutoSync() {
+      if (!avatarBaseUrl) return;
+      const tBtn = document.getElementById("btn-toggle-autosync");
+      tBtn.textContent = "⏳ Updating...";
+      try {
+        const r = await fetch(avatarBaseUrl + "/api/github/toggle-autosync", { method: "POST" });
+        const gs = await r.json();
+        renderSyncUI(gs);
+      } catch (e) {
+        alert("Could not reach phone tunnel: " + e);
+      }
+    }
+
+    async function syncGithubNow() {
+      if (!avatarBaseUrl) return;
+      const sBtn = document.getElementById("btn-sync-now");
+      sBtn.textContent = "⏳ Pulling from GitHub...";
+      try {
+        const r = await fetch(avatarBaseUrl + "/api/github/sync-now", { method: "POST" });
+        const data = await r.json();
+        renderSyncUI(data);
+        const res = data.sync_results || {};
+        sBtn.textContent = "✅ Synced! (" + (res.avatar_ops || "Up to date") + ")";
+        setTimeout(() => {
+          sBtn.textContent = "↻ Pull GitHub Updates Now";
+          refreshSyncStatus();
+        }, 3500);
+      } catch (e) {
+        sBtn.textContent = "↻ Pull GitHub Updates Now";
+        alert("Sync error: " + e);
+      }
+    }
+
     fetch('./endpoints.json?t=' + Date.now())
       .then(r => r.json())
       .then(data => {
         if (data.avatar_ops_url) {
+          avatarBaseUrl = data.avatar_ops_url.replace(/\/$/, "");
           document.getElementById('url-avatar').textContent = data.avatar_ops_url;
           document.getElementById('btn-avatar').href = data.avatar_ops_url;
+          refreshSyncStatus();
         }
         if (data.nifty_analyzer_url) {
           document.getElementById('url-nifty').textContent = data.nifty_analyzer_url;
           document.getElementById('btn-nifty').href = data.nifty_analyzer_url;
         }
         if (data.host) document.getElementById('host-name').textContent = data.host;
-        if (data.updated_at) document.getElementById('updated-at').textContent = 'Last tunnel sync: ' + data.updated_at;
+        if (data.updated_at) document.getElementById('updated-at').textContent = 'Tunnel active since: ' + data.updated_at;
       })
       .catch(() => {});
   </script>
