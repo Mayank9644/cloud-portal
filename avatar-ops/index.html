@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Redirecting to AvatarOps...</title>
+  <style>body{background:#0b0f19;color:#f1f5f9;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}</style>
+</head>
+<body>
+  <div id="msg">Connecting to AvatarOps 24/7 Cloud Tunnel...</div>
+  <script>
+    fetch('../endpoints.json?t=' + Date.now())
+      .then(r => r.json())
+      .then(d => {
+        if (d.avatar_ops_url) window.location.replace(d.avatar_ops_url);
+      });
+  </script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mayank's 24/7 Cloud Portal</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #131b2e;
+      --border: #23304d;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent1: #6366f1;
+      --accent2: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .container { max-width: 760px; width: 100%; }
+    .header { text-align: center; margin-bottom: 32px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(16, 185, 129, 0.12); color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; }
+    h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 14px; margin-top: 6px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .card:hover { transform: translateY(-2px); border-color: var(--accent1); }
+    .tool-tag { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #818cf8; margin-bottom: 8px; }
+    .card h2 { font-size: 20px; margin-bottom: 8px; }
+    .card p { color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+    .url-box {
+      background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+      padding: 10px 12px; border-radius: 8px; font-family: monospace; font-size: 12px;
+      color: #cbd5e1; word-break: break-all; margin-bottom: 16px;
+    }
+    .btn {
+      display: inline-block; text-align: center; text-decoration: none;
+      background: var(--accent1); color: #fff; font-weight: 600; font-size: 14px;
+      padding: 12px 18px; border-radius: 10px; transition: opacity 0.15s;
+    }
+    .btn.green { background: var(--accent2); }
+    .btn:hover { opacity: 0.92; }
+    .footer { text-align: center; margin-top: 28px; color: var(--muted); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge"><span class="dot"></span> <span id="host-name">24/7 Cloud Tunnel Active</span></div>
+      <h1>Mayank's Cloud Applications</h1>
+      <p class="sub" id="updated-at">Loading live tunnel endpoints...</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div>
+          <div class="tool-tag">Tool 1 • Port 8080</div>
+          <h2>AvatarOps Engine</h2>
+          <p>AI Influencer Multi-Avatar Automation Console, Scheduler, and Persona Voice Engine.</p>
+          <div class="url-box" id="url-avatar">Resolving tunnel...</div>
+        </div>
+        <a id="btn-avatar" href="./avatar-ops/" class="btn" target="_blank">Launch AvatarOps →</a>
+      </div>
+      <div class="card">
+        <div>
+          <div class="tool-tag" style="color:#34d399;">Tool 2 • Port 5001</div>
+          <h2>Nifty Analyzer</h2>
+          <p>Institutional Stock & Nifty 50 Terminal, Expert Strategies, Options Desk, and Screener.</p>
+          <div class="url-box" id="url-nifty">Resolving tunnel...</div>
+        </div>
+        <a id="btn-nifty" href="./nifty-analyzer/" class="btn green" target="_blank">Launch Nifty Analyzer →</a>
+      </div>
+    </div>
+    <div class="footer">
+      Permanent Bookmark URLs: <code>/cloud-portal/avatar-ops</code> &bull; <code>/cloud-portal/nifty-analyzer</code>
+    </div>
+  </div>
+  <script>
+    fetch('./endpoints.json?t=' + Date.now())
+      .then(r => r.json())
+      .then(data => {
+        if (data.avatar_ops_url) {
+          document.getElementById('url-avatar').textContent = data.avatar_ops_url;
+          document.getElementById('btn-avatar').href = data.avatar_ops_url;
+        }
+        if (data.nifty_analyzer_url) {
+          document.getElementById('url-nifty').textContent = data.nifty_analyzer_url;
+          document.getElementById('btn-nifty').href = data.nifty_analyzer_url;
+        }
+        if (data.host) document.getElementById('host-name').textContent = data.host;
+        if (data.updated_at) document.getElementById('updated-at').textContent = 'Last tunnel sync: ' + data.updated_at;
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>
