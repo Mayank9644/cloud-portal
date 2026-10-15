@@ -8,11 +8,26 @@
 <body>
   <div id="msg">Connecting to Nifty Analyzer 24/7 Cloud Tunnel...</div>
   <script>
-    fetch('../endpoints.json?t=' + Date.now())
-      .then(r => r.json())
-      .then(d => {
-        if (d.nifty_analyzer_url) window.location.replace(d.nifty_analyzer_url);
-      });
+    async function resolveAndRedirect() {
+      const urls = [
+        'https://raw.githubusercontent.com/Mayank9644/cloud-portal/main/endpoints.json?t=' + Date.now(),
+        '../endpoints.json?t=' + Date.now()
+      ];
+      for (const u of urls) {
+        try {
+          const r = await fetch(u, { cache: 'no-store' });
+          if (r.ok) {
+            const d = await r.json();
+            if (d.nifty_analyzer_url) {
+              window.location.replace(d.nifty_analyzer_url);
+              return;
+            }
+          }
+        } catch (e) {}
+      }
+      document.getElementById('msg').innerHTML = 'Host tunnel restarting... <br><a href="../" style="color:#60a5fa;margin-top:10px;display:inline-block;">Return to Cloud Host Control</a>';
+    }
+    resolveAndRedirect();
   </script>
 </body>
 </html>
