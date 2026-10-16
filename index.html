@@ -148,7 +148,22 @@
       </div>
       <div class="card">
         <div>
-          <div class="tool-tag" style="color:#34d399;">Tool 2 • Port 5001</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div class="tool-tag">Tool 1 • Port 8080</div>
+            <div id="status-avatar" style="font-size:11px;font-family:monospace;color:#94a3b8;">🟡 Probing...</div>
+          </div>
+          <h2>AvatarOps Engine</h2>
+          <p>AI Influencer Multi-Avatar Automation Console, Antigravity Brain Sync, and Scheduler.</p>
+          <div class="url-box" id="url-avatar">Resolving tunnel...</div>
+        </div>
+        <a id="btn-avatar" href="./avatar-ops/" class="btn" target="_blank">Launch AvatarOps →</a>
+      </div>
+      <div class="card">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div class="tool-tag" style="color:#34d399;">Tool 2 • Port 5001</div>
+            <div id="status-nifty" style="font-size:11px;font-family:monospace;color:#94a3b8;">🟡 Probing...</div>
+          </div>
           <h2>Nifty 50 Analyzer</h2>
           <p>Institutional Stock &amp; Nifty 50 Terminal, Expert Strategies, Options Desk, and Screener.</p>
           <div class="url-box" id="url-nifty">Resolving tunnel...</div>
@@ -157,11 +172,12 @@
       </div>
     </div>
     <div class="footer">
-      📱 Tip: In Chrome on your phone, tap <strong>⋮ &rarr; Add to Home screen</strong> to install this control center as a native app.
+      📱 Tip: In Chrome or Safari, tap <strong>Share &rarr; Add to Home Screen</strong> to install Fincept Cloud Control as a standalone app.
     </div>
   </div>
   <script>
     let avatarBaseUrl = "";
+    let niftyBaseUrl = "";
 
     function renderSyncUI(gs) {
       if (!gs) return;
@@ -223,6 +239,30 @@
       }
     }
 
+    async function probeEndpoint(url, path, statusElId) {
+      const el = document.getElementById(statusElId);
+      if (!el || !url) return;
+      const t0 = performance.now();
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 3500);
+      try {
+        const res = await fetch(url.replace(/\/$/, "") + path + "?t=" + Date.now(), {
+          signal: ctrl.signal,
+          mode: "cors"
+        });
+        clearTimeout(tid);
+        const ms = Math.round(performance.now() - t0);
+        if (res.ok) {
+          el.innerHTML = `<span style="color:#10b981;">🟢 Online</span> (${ms}ms)`;
+        } else {
+          el.innerHTML = `<span style="color:#f59e0b;">🟡 HTTP ${res.status}</span>`;
+        }
+      } catch (e) {
+        clearTimeout(tid);
+        el.innerHTML = `<span style="color:#f43f5e;">🔴 Sleeping/Offline</span>`;
+      }
+    }
+
     async function loadLiveEndpoints() {
       const urls = [
         'https://raw.githubusercontent.com/Mayank9644/cloud-portal/main/endpoints.json?t=' + Date.now(),
@@ -236,23 +276,25 @@
             if (data.avatar_ops_url) {
               avatarBaseUrl = data.avatar_ops_url.replace(/\/$/, "");
               document.getElementById('url-avatar').textContent = data.avatar_ops_url;
-              document.getElementById('btn-avatar').href = data.avatar_ops_url;
+              document.getElementById('btn-avatar').href = "./avatar-ops/";
+              probeEndpoint(avatarBaseUrl, "/api/power/status", "status-avatar");
               refreshSyncStatus();
             }
             if (data.nifty_analyzer_url) {
+              niftyBaseUrl = data.nifty_analyzer_url.replace(/\/$/, "");
               document.getElementById('url-nifty').textContent = data.nifty_analyzer_url;
-              document.getElementById('btn-nifty').href = data.nifty_analyzer_url;
+              document.getElementById('btn-nifty').href = "./nifty-analyzer/";
+              probeEndpoint(niftyBaseUrl, "/api/cache/stats", "status-nifty");
             }
             if (data.host) document.getElementById('host-name').textContent = data.host;
-            if (data.updated_at) document.getElementById('updated-at').textContent = 'Tunnel active since: ' + data.updated_at;
+            if (data.updated_at) document.getElementById('updated-at').textContent = 'Tunnel registered: ' + data.updated_at;
             return;
           }
         } catch (e) {}
       }
     }
     loadLiveEndpoints();
-    // Auto-poll endpoints every 30s to keep dashboard up to date
-    setInterval(loadLiveEndpoints, 30000);
+    setInterval(loadLiveEndpoints, 25000);
   </script>
 </body>
 </html>

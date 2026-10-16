@@ -1,33 +1,237 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Redirecting to AvatarOps...</title>
-  <style>body{background:#0b0f19;color:#f1f5f9;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}</style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Connecting to AvatarOps • 24/7 Cloud Host</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #131b2e;
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #6366f1;
+      --accent-green: #10b981;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 24px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    .pulse-wrap {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 18px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pulse-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.2);
+      animation: pulse 2s infinite ease-out;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.7); opacity: 0.8; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+    .pulse-core {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4338ca, #6366f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+      position: relative;
+      z-index: 2;
+    }
+    h1 {
+      font-size: 19px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+    p.status-text {
+      font-size: 13.5px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 100px;
+      font-size: 11.5px;
+      font-family: 'Geist Mono', monospace;
+      color: #cbd5e1;
+      margin-bottom: 20px;
+    }
+    .badge .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-green);
+    }
+    .btn-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn.secondary {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .info-footer {
+      margin-top: 18px;
+      font-size: 11.5px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+  </style>
 </head>
 <body>
-  <div id="msg">Connecting to AvatarOps 24/7 Cloud Tunnel...</div>
+  <div class="card">
+    <div class="pulse-wrap">
+      <div class="pulse-ring"></div>
+      <div class="pulse-core">🤖</div>
+    </div>
+    <h1 id="title">AvatarOps Console</h1>
+    <div class="badge">
+      <span class="dot" id="hostDot"></span>
+      <span id="hostLabel">Samsung Galaxy Z Fold3 5G</span>
+    </div>
+    <p class="status-text" id="statusMsg">Checking live Cloudflare tunnel connection...</p>
+    
+    <div class="btn-row" id="actionButtons" style="display:none;">
+      <a id="btnBypass" href="#" class="btn primary">Launch Tunnel Directly →</a>
+      <a href="../" class="btn secondary">Back to Cloud Host Control</a>
+    </div>
+
+    <div class="info-footer" id="infoFooter">
+      ⚡ AI Influencer Automation & Scheduler Engine.
+    </div>
+  </div>
+
   <script>
-    async function resolveAndRedirect() {
+    let targetUrl = "";
+    let checkAttempts = 0;
+    const maxAttempts = 12;
+
+    async function checkTunnelHealth(url) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      try {
+        const probe = await fetch(url.replace(/\/$/, '') + '/api/power/status?t=' + Date.now(), {
+          signal: controller.signal,
+          mode: 'cors'
+        });
+        clearTimeout(timeoutId);
+        return probe.ok;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        return false;
+      }
+    }
+
+    async function resolveAndConnect() {
+      checkAttempts++;
+      const statusMsg = document.getElementById("statusMsg");
       const urls = [
         'https://raw.githubusercontent.com/Mayank9644/cloud-portal/main/endpoints.json?t=' + Date.now(),
         '../endpoints.json?t=' + Date.now()
       ];
+
+      let endpointData = null;
       for (const u of urls) {
         try {
           const r = await fetch(u, { cache: 'no-store' });
           if (r.ok) {
-            const d = await r.json();
-            if (d.avatar_ops_url) {
-              window.location.replace(d.avatar_ops_url);
-              return;
-            }
+            endpointData = await r.json();
+            break;
           }
         } catch (e) {}
       }
-      document.getElementById('msg').innerHTML = 'Host tunnel restarting... <br><a href="../" style="color:#60a5fa;margin-top:10px;display:inline-block;">Return to Cloud Host Control</a>';
+
+      if (endpointData && endpointData.avatar_ops_url) {
+        targetUrl = endpointData.avatar_ops_url;
+        document.getElementById("btnBypass").href = targetUrl;
+        if (endpointData.updated_at) {
+          document.getElementById("infoFooter").textContent = "Tunnel registered: " + endpointData.updated_at;
+        }
+
+        statusMsg.textContent = "Connecting to live tunnel...";
+        
+        const isHealthy = await checkTunnelHealth(targetUrl);
+        if (isHealthy) {
+          statusMsg.textContent = "Tunnel active! Opening console...";
+          window.location.replace(targetUrl);
+          return;
+        }
+      }
+
+      if (checkAttempts < maxAttempts) {
+        document.getElementById("hostDot").style.background = "#f59e0b";
+        statusMsg.innerHTML = `Phone host is waking up or cycling tunnel...<br><span style="font-family:'Geist Mono';font-size:12px;color:#94a3b8;">Retrying probe (${checkAttempts}/${maxAttempts})...</span>`;
+        document.getElementById("actionButtons").style.display = "flex";
+        setTimeout(resolveAndConnect, 2500);
+      } else {
+        document.getElementById("hostDot").style.background = "#ef4444";
+        statusMsg.innerHTML = "Host tunnel is currently resting.<br>Wake your Samsung Galaxy Z Fold3 or tap below to attempt connection.";
+        document.getElementById("actionButtons").style.display = "flex";
+      }
     }
-    resolveAndRedirect();
+
+    resolveAndConnect();
   </script>
 </body>
 </html>
