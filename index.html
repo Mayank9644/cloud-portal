@@ -139,15 +139,6 @@
     <div class="grid">
       <div class="card">
         <div>
-          <div class="tool-tag">Tool 1 • Port 8080</div>
-          <h2>AvatarOps Engine</h2>
-          <p>AI Influencer Multi-Avatar Automation Console, Antigravity Brain Sync, and Scheduler.</p>
-          <div class="url-box" id="url-avatar">Resolving tunnel...</div>
-        </div>
-        <a id="btn-avatar" href="./avatar-ops/" class="btn" target="_blank">Launch AvatarOps →</a>
-      </div>
-      <div class="card">
-        <div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <div class="tool-tag">Tool 1 • Port 8080</div>
             <div id="status-avatar" style="font-size:11px;font-family:monospace;color:#94a3b8;">🟡 Probing...</div>
@@ -259,6 +250,19 @@
         }
       } catch (e) {
         clearTimeout(tid);
+        // Fallback: try no-cors ping. If fetch succeeds in no-cors mode, the host is UP and network is responding!
+        try {
+          const ctrl2 = new AbortController();
+          const tid2 = setTimeout(() => ctrl2.abort(), 2500);
+          await fetch(url.replace(/\/$/, "") + path + "?t=" + Date.now(), {
+            signal: ctrl2.signal,
+            mode: "no-cors"
+          });
+          clearTimeout(tid2);
+          const ms2 = Math.round(performance.now() - t0);
+          el.innerHTML = `<span style="color:#10b981;">🟢 Online</span> (~${ms2}ms)`;
+          return;
+        } catch (e2) {}
         el.innerHTML = `<span style="color:#f43f5e;">🔴 Sleeping/Offline</span>`;
       }
     }
@@ -284,7 +288,7 @@
               niftyBaseUrl = data.nifty_analyzer_url.replace(/\/$/, "");
               document.getElementById('url-nifty').textContent = data.nifty_analyzer_url;
               document.getElementById('btn-nifty').href = "./nifty-analyzer/";
-              probeEndpoint(niftyBaseUrl, "/api/cache/stats", "status-nifty");
+              probeEndpoint(niftyBaseUrl, "/health", "status-nifty");
             }
             if (data.host) document.getElementById('host-name').textContent = data.host;
             if (data.updated_at) document.getElementById('updated-at').textContent = 'Tunnel registered: ' + data.updated_at;

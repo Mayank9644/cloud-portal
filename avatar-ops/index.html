@@ -168,19 +168,31 @@
     const maxAttempts = 12;
 
     async function checkTunnelHealth(url) {
+      const cleanUrl = url.replace(/\/$/, "");
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
       try {
-        const probe = await fetch(url.replace(/\/$/, '') + '/api/power/status?t=' + Date.now(), {
+        const probe = await fetch(cleanUrl + '/api/power/status?t=' + Date.now(), {
           signal: controller.signal,
           mode: 'cors'
         });
         clearTimeout(timeoutId);
-        return probe.ok;
+        if (probe.ok) return true;
       } catch (err) {
         clearTimeout(timeoutId);
-        return false;
+        // Fallback probe with no-cors: an opaque response confirms host is reachable!
+        try {
+          const ctrl2 = new AbortController();
+          const tid2 = setTimeout(() => ctrl2.abort(), 2000);
+          await fetch(cleanUrl + '/api/power/status?t=' + Date.now(), {
+            signal: ctrl2.signal,
+            mode: 'no-cors'
+          });
+          clearTimeout(tid2);
+          return true;
+        } catch (err2) {}
       }
+      return false;
     }
 
     async function resolveAndConnect() {
