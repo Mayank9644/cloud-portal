@@ -198,20 +198,60 @@
     async function resolveAndConnect() {
       checkAttempts++;
       const statusMsg = document.getElementById("statusMsg");
-      const urls = [
-        'https://raw.githubusercontent.com/Mayank9644/cloud-portal/main/endpoints.json?t=' + Date.now(),
-        '../endpoints.json?t=' + Date.now()
-      ];
-
       let endpointData = null;
-      for (const u of urls) {
+      // 1. Zero-Cache Realtime Channel
+      try {
+        const nr = await fetch('https://ntfy.sh/fincept_cloudhost_endpoints_9644/json?poll=1&t=' + Date.now(), { cache: 'no-store' });
+        if (nr.ok) {
+          const text = await nr.text();
+          const lines = text.trim().split("\n");
+          for (let i = lines.length - 1; i >= 0; i--) {
+            try {
+              const msgObj = JSON.parse(lines[i]);
+              if (msgObj.message) {
+                const parsed = typeof msgObj.message === 'string' ? JSON.parse(msgObj.message) : msgObj.message;
+                if (parsed.nifty_analyzer_url) {
+                  endpointData = parsed;
+                  break;
+                }
+              }
+            } catch (err) {}
+          }
+        }
+      } catch (e) {}
+
+      // 2. GitHub Contents API (Decodes Base64, bypasses Fastly 5-min cache)
+      if (!endpointData) {
         try {
-          const r = await fetch(u, { cache: 'no-store' });
-          if (r.ok) {
-            endpointData = await r.json();
-            break;
+          const gr = await fetch('https://api.github.com/repos/Mayank9644/cloud-portal/contents/endpoints.json?ref=main&t=' + Date.now(), {
+            cache: 'no-store',
+            headers: { 'Accept': 'application/vnd.github.v3+json' }
+          });
+          if (gr.ok) {
+            const gData = await gr.json();
+            if (gData.content) {
+              const rawJson = decodeURIComponent(escape(atob(gData.content.replace(/\s/g, ''))));
+              endpointData = JSON.parse(rawJson);
+            }
           }
         } catch (e) {}
+      }
+
+      // 3. Fallback Static URLs
+      if (!endpointData) {
+        const urls = [
+          'https://raw.githubusercontent.com/Mayank9644/cloud-portal/main/endpoints.json?t=' + Date.now(),
+          '../endpoints.json?t=' + Date.now()
+        ];
+        for (const u of urls) {
+          try {
+            const r = await fetch(u, { cache: 'no-store' });
+            if (r.ok) {
+              endpointData = await r.json();
+              break;
+            }
+          } catch (e) {}
+        }
       }
 
       if (endpointData && endpointData.nifty_analyzer_url) {
