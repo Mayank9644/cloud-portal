@@ -216,20 +216,17 @@
 
       if (endpointData && endpointData.nifty_analyzer_url) {
         targetUrl = endpointData.nifty_analyzer_url;
-        document.getElementById("btnBypass").href = targetUrl;
+        const btnBypass = document.getElementById("btnBypass");
+        btnBypass.href = targetUrl;
+        btnBypass.textContent = "Open Nifty Analyzer Now ↗";
+        document.getElementById("actionButtons").style.display = "flex";
         if (endpointData.updated_at) {
           document.getElementById("infoFooter").textContent = "Tunnel registered: " + endpointData.updated_at;
         }
 
-        statusMsg.textContent = "Connecting to live tunnel...";
-        
-        // Fast health probe
-        const isHealthy = await checkTunnelHealth(targetUrl);
-        if (isHealthy) {
-          statusMsg.textContent = "Tunnel active! Opening terminal...";
-          window.location.replace(targetUrl);
-          return;
-        }
+        statusMsg.textContent = "Tunnel active! Opening Nifty terminal...";
+        window.location.replace(targetUrl);
+        return;
       }
 
       // If probe didn't resolve immediately (phone in sleep mode or tunnel reconnecting)

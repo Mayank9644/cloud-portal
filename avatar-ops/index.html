@@ -216,19 +216,17 @@
 
       if (endpointData && endpointData.avatar_ops_url) {
         targetUrl = endpointData.avatar_ops_url;
-        document.getElementById("btnBypass").href = targetUrl;
+        const btnBypass = document.getElementById("btnBypass");
+        btnBypass.href = targetUrl;
+        btnBypass.textContent = "Open AvatarOps Now ↗";
+        document.getElementById("actionButtons").style.display = "flex";
         if (endpointData.updated_at) {
           document.getElementById("infoFooter").textContent = "Tunnel registered: " + endpointData.updated_at;
         }
 
-        statusMsg.textContent = "Connecting to live tunnel...";
-        
-        const isHealthy = await checkTunnelHealth(targetUrl);
-        if (isHealthy) {
-          statusMsg.textContent = "Tunnel active! Opening console...";
-          window.location.replace(targetUrl);
-          return;
-        }
+        statusMsg.textContent = "Tunnel active! Opening AvatarOps console...";
+        window.location.replace(targetUrl);
+        return;
       }
 
       if (checkAttempts < maxAttempts) {

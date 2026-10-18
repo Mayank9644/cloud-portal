@@ -495,16 +495,20 @@
             const data = await r.json();
             if (data.avatar_ops_url) {
               avatarBaseUrl = data.avatar_ops_url.replace(/\/$/, "");
-              document.getElementById('url-avatar').textContent = data.avatar_ops_url;
-              document.getElementById('btn-avatar').href = "./avatar-ops/";
+              document.getElementById('url-avatar').innerHTML = `<a href="${data.avatar_ops_url}" target="_blank" rel="noopener noreferrer" style="color:#cbd5e1;text-decoration:none;">🔗 ${data.avatar_ops_url}</a>`;
+              const btnAvatar = document.getElementById('btn-avatar');
+              btnAvatar.href = data.avatar_ops_url;
+              btnAvatar.textContent = "Launch AvatarOps ↗";
               probeEndpoint(avatarBaseUrl, "/api/power/status", "status-avatar");
               refreshSyncStatus();
               refreshHostVitals();
             }
             if (data.nifty_analyzer_url) {
               niftyBaseUrl = data.nifty_analyzer_url.replace(/\/$/, "");
-              document.getElementById('url-nifty').textContent = data.nifty_analyzer_url;
-              document.getElementById('btn-nifty').href = "./nifty-analyzer/";
+              document.getElementById('url-nifty').innerHTML = `<a href="${data.nifty_analyzer_url}" target="_blank" rel="noopener noreferrer" style="color:#cbd5e1;text-decoration:none;">🔗 ${data.nifty_analyzer_url}</a>`;
+              const btnNifty = document.getElementById('btn-nifty');
+              btnNifty.href = data.nifty_analyzer_url;
+              btnNifty.textContent = "Launch Nifty Analyzer ↗";
               probeEndpoint(niftyBaseUrl, "/health", "status-nifty");
             }
             if (data.host) document.getElementById('host-name').textContent = data.host;

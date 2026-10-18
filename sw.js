@@ -1,5 +1,5 @@
 /* Fincept Cloud Host Control — Service Worker */
-const CACHE_NAME = "fincept-cloud-host-v2";
+const CACHE_NAME = "fincept-cloud-host-v3";
 const SHELL_ASSETS = [
   "./",
   "./index.html",
