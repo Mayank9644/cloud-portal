@@ -162,124 +162,52 @@
     </div>
   </div>
 
+  <script src="../assets/portal-common.js"></script>
   <script>
-    let targetUrl = "";
-    let checkAttempts = 0;
-    const maxAttempts = 12;
+    // Redirect ONLY after a successful health probe (audit H-6). If the
+    // probe fails we keep retrying with backoff — we never redirect to a
+    // dead URL. no-cors/opaque answers count as "unknown", not healthy.
+    const SERVICE_KEY = "nifty_analyzer_url";
+    const HEALTH_SUFFIX = "/health";
+    let attempts = 0;
 
-    async function checkTunnelHealth(url) {
-      const cleanUrl = url.replace(/\/$/, "");
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
-      try {
-        const probe = await fetch(cleanUrl + '/health?t=' + Date.now(), {
-          signal: controller.signal,
-          mode: 'cors'
-        });
-        clearTimeout(timeoutId);
-        if (probe.ok) return true;
-      } catch (err) {
-        clearTimeout(timeoutId);
-        // Fallback probe with no-cors: an opaque response confirms host is reachable!
-        try {
-          const ctrl2 = new AbortController();
-          const tid2 = setTimeout(() => ctrl2.abort(), 2000);
-          await fetch(cleanUrl + '/health?t=' + Date.now(), {
-            signal: ctrl2.signal,
-            mode: 'no-cors'
-          });
-          clearTimeout(tid2);
-          return true;
-        } catch (err2) {}
-      }
-      return false;
+    function setStatus(text) {
+      const el = document.getElementById("statusMsg");
+      if (el) el.textContent = text;
     }
 
     async function resolveAndConnect() {
-      checkAttempts++;
-      const statusMsg = document.getElementById("statusMsg");
-      let endpointData = null;
-      // 1. Zero-Cache Realtime Channel
-      try {
-        const nr = await fetch('https://ntfy.sh/fincept_cloudhost_endpoints_9644/json?poll=1&t=' + Date.now(), { cache: 'no-store' });
-        if (nr.ok) {
-          const text = await nr.text();
-          const lines = text.trim().split("\n");
-          for (let i = lines.length - 1; i >= 0; i--) {
-            try {
-              const msgObj = JSON.parse(lines[i]);
-              if (msgObj.message) {
-                const parsed = typeof msgObj.message === 'string' ? JSON.parse(msgObj.message) : msgObj.message;
-                if (parsed.nifty_analyzer_url) {
-                  endpointData = parsed;
-                  break;
-                }
-              }
-            } catch (err) {}
-          }
-        }
-      } catch (e) {}
-
-      // 2. GitHub Contents API (Decodes Base64, bypasses Fastly 5-min cache)
-      if (!endpointData) {
-        try {
-          const gr = await fetch('https://api.github.com/repos/Mayank9644/cloud-portal/contents/endpoints.json?ref=main&t=' + Date.now(), {
-            cache: 'no-store',
-            headers: { 'Accept': 'application/vnd.github.v3+json' }
-          });
-          if (gr.ok) {
-            const gData = await gr.json();
-            if (gData.content) {
-              const rawJson = decodeURIComponent(escape(atob(gData.content.replace(/\s/g, ''))));
-              endpointData = JSON.parse(rawJson);
-            }
-          }
-        } catch (e) {}
+      attempts += 1;
+      const data = await PortalCommon.resolveEndpoints("../endpoints.json");
+      if (!data || !data[SERVICE_KEY]) {
+        setStatus("No validated endpoint yet — retrying… (attempt " + attempts + ")");
+        return scheduleRetry();
       }
-
-      // 3. Fallback Static URLs
-      if (!endpointData) {
-        const urls = [
-          'https://raw.githubusercontent.com/Mayank9644/cloud-portal/main/endpoints.json?t=' + Date.now(),
-          '../endpoints.json?t=' + Date.now()
-        ];
-        for (const u of urls) {
-          try {
-            const r = await fetch(u, { cache: 'no-store' });
-            if (r.ok) {
-              endpointData = await r.json();
-              break;
-            }
-          } catch (e) {}
-        }
+      const targetUrl = data[SERVICE_KEY]; // already allowlist-validated
+      if (PortalCommon.isStale(data)) {
+        setStatus("⚠ Endpoints are STALE (updated " + (data.updated_at || "unknown") + "). Probing before connecting…");
       }
-
-      if (endpointData && endpointData.nifty_analyzer_url) {
-        targetUrl = endpointData.nifty_analyzer_url;
-        const btnBypass = document.getElementById("btnBypass");
-        btnBypass.href = targetUrl;
-        btnBypass.textContent = "Open Nifty Analyzer Now ↗";
-        document.getElementById("actionButtons").style.display = "flex";
-        if (endpointData.updated_at) {
-          document.getElementById("infoFooter").textContent = "Tunnel registered: " + endpointData.updated_at;
-        }
-
-        statusMsg.textContent = "Tunnel active! Opening Nifty terminal...";
+      const health = await PortalCommon.checkTunnelHealth(targetUrl + HEALTH_SUFFIX);
+      if (health === "online") {
+        setStatus("Tunnel healthy — connecting…");
         window.location.replace(targetUrl);
         return;
       }
-
-      // If probe didn't resolve immediately (phone in sleep mode or tunnel reconnecting)
-      if (checkAttempts < maxAttempts) {
-        document.getElementById("hostDot").style.background = "#f59e0b";
-        statusMsg.innerHTML = `Phone host is waking up or cycling tunnel...<br><span style="font-family:'Geist Mono';font-size:12px;color:#94a3b8;">Retrying probe (${checkAttempts}/${maxAttempts})...</span>`;
-        document.getElementById("actionButtons").style.display = "flex";
-        setTimeout(resolveAndConnect, 2500);
-      } else {
-        document.getElementById("hostDot").style.background = "#ef4444";
-        statusMsg.innerHTML = "Host tunnel is currently resting.<br>Wake your Samsung Galaxy Z Fold3 or tap below to attempt connection.";
-        document.getElementById("actionButtons").style.display = "flex";
+      // Not healthy: offer a manual bypass link (validated URL, set via the
+      // href property, never innerHTML) and keep retrying.
+      const row = document.getElementById("actionButtons");
+      const bypass = document.getElementById("btnBypass");
+      if (row && bypass) {
+        bypass.href = targetUrl;
+        row.style.display = "flex";
       }
+      setStatus("Tunnel is " + health + " — not redirecting to a possibly-dead URL. Retrying… (attempt " + attempts + ")");
+      scheduleRetry();
+    }
+
+    function scheduleRetry() {
+      const delay = Math.min(30000, 2500 * Math.pow(2, Math.min(attempts, 4)));
+      setTimeout(resolveAndConnect, delay);
     }
 
     resolveAndConnect();
