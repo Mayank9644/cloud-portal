@@ -1,0 +1,16 @@
+# Named Cloudflare Tunnel example — copy to ~/.cloudflared/config.yml on the
+# phone (or cloudflared/config.yml in the installed app dir) and replace
+# <TUNNEL-UUID> and example.com. See docs/NAMED-TUNNEL.md.
+# NEVER commit real credentials JSON files.
+tunnel: <TUNNEL-UUID>
+credentials-file: /data/data/com.termux/files/home/.cloudflared/<TUNNEL-UUID>.json
+
+ingress:
+  - hostname: nifty.example.com
+    service: http://127.0.0.1:5001
+  - hostname: avatar.example.com
+    service: http://127.0.0.1:8080
+  - hostname: host.example.com
+    service: http://127.0.0.1:8088
+  # Catch-all (required by cloudflared)
+  - service: http_status:404
