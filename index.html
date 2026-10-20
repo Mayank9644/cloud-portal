@@ -210,22 +210,22 @@
     <div class="vitals-panel">
       <div class="vital-card">
         <div class="vital-title">Battery &amp; Power</div>
-        <div class="vital-metric" id="vital-battery">⚡ 85% Charging</div>
+        <div class="vital-metric" id="vital-battery">⚡ — unavailable</div>
         <div class="battery-bar-wrap">
-          <div class="battery-fill" id="battery-fill" style="width: 85%;"></div>
+          <div class="battery-fill" id="battery-fill" style="width: 0%;"></div>
         </div>
       </div>
       <div class="vital-card">
         <div class="vital-title">Host Thermal</div>
-        <div class="vital-metric" id="vital-temp">🟢 32.0°C (Normal)</div>
+        <div class="vital-metric" id="vital-temp">— unavailable</div>
       </div>
       <div class="vital-card">
         <div class="vital-title">Unified RAM</div>
-        <div class="vital-metric" id="vital-ram">💾 2.4 / 11.4 GB</div>
+        <div class="vital-metric" id="vital-ram">💾 — unavailable</div>
       </div>
       <div class="vital-card">
         <div class="vital-title">Uptime &amp; State</div>
-        <div class="vital-metric" id="vital-uptime">⏱️ 4d 12h (Active)</div>
+        <div class="vital-metric" id="vital-uptime">⏱️ — unavailable</div>
       </div>
     </div>
 
@@ -309,285 +309,178 @@
     </div>
   </div>
 
+  <script src="./assets/portal-common.js"></script>
   <script>
+    // Portal logic — all shared resolution/validation lives in
+    // assets/portal-common.js (audit L-2). Endpoint data is rendered with
+    // textContent and validated URLs ONLY (audit H-8). ntfy is NOT used to
+    // resolve endpoints (audit C2) — GitHub is the source of truth.
+    // Host vitals/logs come from the host daemon's REAL API (audit H-9):
+    //   GET {host_daemon_url}/api/host/vitals
+    //   GET {host_daemon_url}/api/host/logs?service=<tab>&lines=40  -> data.lines
+    // host_daemon_url is an OPTIONAL field in endpoints.json; when it is
+    // absent the vitals/logs panels are disabled gracefully. (AvatarOps
+    // /api/power/status is AvatarOps' own endpoint and was previously
+    // mis-used here as if it were host telemetry — that call is gone.)
     let avatarBaseUrl = "";
     let niftyBaseUrl = "";
+    let daemonBaseUrl = "";
     let currentLogTab = "nifty";
+    let autoSync = false;
 
-    // Register Service Worker for 0ms PWA Launch
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
       });
     }
 
-    function renderSyncUI(gs) {
-      if (!gs) return;
-      const tBtn = document.getElementById("btn-toggle-autosync");
-      const cMeta = document.getElementById("commit-meta");
-      const lMeta = document.getElementById("last-sync-meta");
-      if (gs.auto_sync_enabled) {
-        tBtn.textContent = "🔄 Auto-Sync: ON (Every 60s)";
-        tBtn.className = "btn outline active-warn";
-      } else {
-        tBtn.textContent = "🔋 Auto-Sync: OFF (Battery Saver)";
-        tBtn.className = "btn outline battery-saver";
-      }
-      cMeta.textContent = `AvatarOps: #${gs.avatar_ops_commit || 'main'} • Nifty: #${gs.nifty_commit || 'main'}`;
-      lMeta.textContent = gs.last_sync_at ? `Last Pull: ${gs.last_sync_at}` : gs.mode_label;
-    }
-
-    async function refreshSyncStatus() {
-      if (!avatarBaseUrl) return;
-      try {
-        const r = await fetch(avatarBaseUrl + "/api/github/status?t=" + Date.now());
-        const gs = await r.json();
-        renderSyncUI(gs);
-      } catch (e) {
-        document.getElementById("commit-meta").textContent = "Host reachable via tunnel";
-      }
-    }
-
-    async function toggleAutoSync() {
-      if (!avatarBaseUrl) return;
-      const tBtn = document.getElementById("btn-toggle-autosync");
-      tBtn.textContent = "⏳ Updating...";
-      try {
-        const r = await fetch(avatarBaseUrl + "/api/github/toggle-autosync", { method: "POST" });
-        const gs = await r.json();
-        renderSyncUI(gs);
-      } catch (e) {
-        alert("Could not reach phone tunnel: " + e);
-      }
-    }
-
-    async function syncGithubNow() {
-      if (!avatarBaseUrl) return;
-      const sBtn = document.getElementById("btn-sync-now");
-      sBtn.textContent = "⏳ Pulling from GitHub...";
-      try {
-        const r = await fetch(avatarBaseUrl + "/api/github/sync-now", { method: "POST" });
-        const data = await r.json();
-        renderSyncUI(data);
-        const res = data.sync_results || {};
-        sBtn.textContent = "✅ Synced! (" + (res.avatar_ops || "Up to date") + ")";
-        setTimeout(() => {
-          sBtn.textContent = "↻ Pull GitHub Updates Now";
-          refreshSyncStatus();
-        }, 3500);
-      } catch (e) {
-        sBtn.textContent = "↻ Pull GitHub Updates Now";
-        alert("Sync error: " + e);
-      }
+    function setVital(id, text) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
     }
 
     async function refreshHostVitals() {
-      if (!avatarBaseUrl) return;
-      try {
-        const res = await fetch(avatarBaseUrl + "/api/power/status?t=" + Date.now());
-        if (res.ok) {
-          const data = await res.json();
-          // Update Battery
-          const isAC = data.is_ac_power;
-          const pct = data.battery_percent !== null ? data.battery_percent : 85;
-          document.getElementById("vital-battery").textContent = isAC ? `⚡ ${pct}% (Charging)` : `🔋 ${pct}% (Battery)`;
-          const bFill = document.getElementById("battery-fill");
-          bFill.style.width = pct + "%";
-          bFill.style.background = pct < 20 ? "#ef4444" : pct < 40 ? "#f59e0b" : "#10b981";
-
-          // Update Thermal State
-          document.getElementById("vital-temp").innerHTML = `<span style="color:#10b981;">🟢 Active Host</span>`;
-
-          // Update RAM / Device
-          document.getElementById("vital-ram").textContent = data.power_source ? "SM-F926N (8GB)" : "Connected";
-
-          // Recommendation & Sync Mode
-          if (data.github_sync) renderSyncUI(data.github_sync);
-        }
-      } catch (e) {}
-    }
-
-    async function probeEndpoint(url, path, statusElId) {
-      const el = document.getElementById(statusElId);
-      if (!el || !url) return;
-      const t0 = performance.now();
-      const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 3500);
-      try {
-        const res = await fetch(url.replace(/\/$/, "") + path + "?t=" + Date.now(), {
-          signal: ctrl.signal,
-          mode: "cors"
-        });
-        clearTimeout(tid);
-        const ms = Math.round(performance.now() - t0);
-        if (res.ok) {
-          el.innerHTML = `<span style="color:#10b981;">🟢 Online</span> (${ms}ms)`;
-        } else {
-          el.innerHTML = `<span style="color:#f59e0b;">🟡 HTTP ${res.status}</span>`;
-        }
-      } catch (e) {
-        clearTimeout(tid);
-        // Fallback: try no-cors ping. If fetch succeeds in no-cors mode, the host is UP!
-        try {
-          const ctrl2 = new AbortController();
-          const tid2 = setTimeout(() => ctrl2.abort(), 2500);
-          await fetch(url.replace(/\/$/, "") + path + "?t=" + Date.now(), {
-            signal: ctrl2.signal,
-            mode: "no-cors"
-          });
-          clearTimeout(tid2);
-          const ms2 = Math.round(performance.now() - t0);
-          el.innerHTML = `<span style="color:#10b981;">🟢 Online</span> (~${ms2}ms)`;
-          return;
-        } catch (e2) {}
-        el.innerHTML = `<span style="color:#f43f5e;">🔴 Sleeping/Offline</span>`;
-      }
-    }
-
-    // Modal Logs Functions
-    function openLogsModal(srv) {
-      document.getElementById("logs-modal").classList.add("active");
-      switchLogTab(srv || "nifty");
-    }
-
-    function closeLogsModal() {
-      document.getElementById("logs-modal").classList.remove("active");
-    }
-
-    async function switchLogTab(srv) {
-      currentLogTab = srv;
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      const activeBtn = document.getElementById("tab-" + srv);
-      if (activeBtn) activeBtn.classList.add("active");
-      document.getElementById("active-log-title").textContent = `(${srv})`;
-
-      const vp = document.getElementById("log-viewport");
-      vp.textContent = "Loading " + srv + " logs from host...";
-
-      if (!avatarBaseUrl) {
-        vp.textContent = "Error: Phone host tunnel not connected.";
+      if (!daemonBaseUrl) {
+        setVital("vital-battery", "⚡ — unavailable (no host daemon configured)");
+        setVital("vital-temp", "— unavailable");
+        setVital("vital-ram", "💾 — unavailable");
+        setVital("vital-uptime", "⏱️ — unavailable");
         return;
       }
       try {
-        const r = await fetch(avatarBaseUrl + "/api/logs?limit=40&t=" + Date.now());
-        if (r.ok) {
-          const data = await r.json();
-          const lines = Array.isArray(data) ? data : (data.logs || []);
-          vp.textContent = lines.join("\n") || `[No log entries recorded for ${srv}]`;
-          vp.scrollTop = vp.scrollHeight;
-        } else {
-          vp.textContent = `[Failed to retrieve logs: HTTP ${r.status}]`;
-        }
-      } catch (err) {
-        vp.textContent = `[Host log stream unreachable: ${err.message}]`;
+        const res = await fetch(daemonBaseUrl + "/api/host/vitals", { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        const b = data.battery || {};
+        setVital("vital-battery", b.capacity_pct === null || b.capacity_pct === undefined
+          ? "⚡ — unavailable" : "⚡ " + b.capacity_pct + "% " + (b.status || ""));
+        const fill = document.getElementById("battery-fill");
+        if (fill) fill.style.width = (b.capacity_pct || 0) + "%";
+        setVital("vital-temp", b.temperature_c === null || b.temperature_c === undefined
+          ? "— unavailable" : b.temperature_c + "°C" + (data.warning ? " ⚠ " + data.warning : ""));
+        const m = data.memory || {};
+        setVital("vital-ram", m.total_mb ? "💾 " + Math.round((m.used_mb || 0) / 1024 * 10) / 10 + " / " + Math.round(m.total_mb / 1024 * 10) / 10 + " GB" : "💾 — unavailable");
+        const s = data.system || {};
+        setVital("vital-uptime", s.uptime_display ? "⏱️ " + s.uptime_display : "⏱️ — unavailable");
+      } catch (e) {
+        setVital("vital-battery", "⚡ — unavailable (daemon unreachable)");
       }
     }
 
-    function applyEndpointsData(data) {
+    function renderServiceUrl(boxId, btnId, statusId, url, label) {
+      const box = document.getElementById(boxId);
+      const btn = document.getElementById(btnId);
+      const statusEl = document.getElementById(statusId);
+      box.textContent = "";
+      if (!url) { box.textContent = "No validated tunnel URL available."; return; }
+      const a = document.createElement("a");
+      a.textContent = "🔗 " + url;               // textContent: no injection
+      a.href = url;                               // url already allowlist-validated
+      a.target = "_blank"; a.rel = "noopener noreferrer";
+      a.style.color = "#cbd5e1"; a.style.textDecoration = "none";
+      box.appendChild(a);
+      if (btn) btn.href = url;
+      // Probe: opaque/no-cors results are "unknown", never "online" (M-4).
+      PortalCommon.checkTunnelHealth(url).then((health) => {
+        if (!statusEl) return;
+        statusEl.textContent = health === "online" ? "🟢 Online"
+          : health === "unknown" ? "🟡 Unknown (edge answered, origin unverified)"
+          : "🔴 Sleeping/Offline";
+      });
+    }
+
+    function applyEndpoints(data) {
       if (!data) return;
-      if (data.avatar_ops_url) {
-        avatarBaseUrl = data.avatar_ops_url.replace(/\/$/, "");
-        document.getElementById('url-avatar').innerHTML = `<a href="${data.avatar_ops_url}" target="_blank" rel="noopener noreferrer" style="color:#cbd5e1;text-decoration:none;">🔗 ${data.avatar_ops_url}</a>`;
-        const btnAvatar = document.getElementById('btn-avatar');
-        btnAvatar.href = data.avatar_ops_url;
-        btnAvatar.textContent = "Launch AvatarOps ↗";
-        probeEndpoint(avatarBaseUrl, "/api/power/status", "status-avatar");
-        refreshSyncStatus();
-        refreshHostVitals();
+      avatarBaseUrl = data.avatar_ops_url || "";
+      niftyBaseUrl = data.nifty_analyzer_url || "";
+      daemonBaseUrl = data.host_daemon_url || "";
+      const hostEl = document.getElementById("host-name");
+      if (hostEl && data.host) hostEl.textContent = data.host;
+      const updEl = document.getElementById("updated-at");
+      if (updEl) {
+        updEl.textContent = PortalCommon.isStale(data)
+          ? "⚠ STALE endpoints (updated_at: " + (data.updated_at || "unknown") + ") — tunnels may be down"
+          : "Live endpoints • updated " + (data.updated_at || "");
       }
-      if (data.nifty_analyzer_url) {
-        niftyBaseUrl = data.nifty_analyzer_url.replace(/\/$/, "");
-        document.getElementById('url-nifty').innerHTML = `<a href="${data.nifty_analyzer_url}" target="_blank" rel="noopener noreferrer" style="color:#cbd5e1;text-decoration:none;">🔗 ${data.nifty_analyzer_url}</a>`;
-        const btnNifty = document.getElementById('btn-nifty');
-        btnNifty.href = data.nifty_analyzer_url;
-        btnNifty.textContent = "Launch Nifty Analyzer ↗";
-        probeEndpoint(niftyBaseUrl, "/health", "status-nifty");
-      }
-      if (data.host) document.getElementById('host-name').textContent = data.host;
-      if (data.updated_at) document.getElementById('updated-at').textContent = 'Tunnel registered: ' + data.updated_at;
+      renderServiceUrl("url-avatar", "btn-avatar", "status-avatar", avatarBaseUrl);
+      renderServiceUrl("url-nifty", "btn-nifty", "status-nifty", niftyBaseUrl);
+      refreshHostVitals();
     }
 
     async function loadLiveEndpoints() {
-      // Channel 1: Instant Zero-Cache Realtime Stream (ntfy poll)
-      try {
-        const nr = await fetch('https://ntfy.sh/fincept_cloudhost_endpoints_9644/json?poll=1&t=' + Date.now(), { cache: 'no-store' });
-        if (nr.ok) {
-          const text = await nr.text();
-          const lines = text.trim().split("\n");
-          for (let i = lines.length - 1; i >= 0; i--) {
-            try {
-              const msgObj = JSON.parse(lines[i]);
-              if (msgObj.message) {
-                const parsed = typeof msgObj.message === 'string' ? JSON.parse(msgObj.message) : msgObj.message;
-                if (parsed.avatar_ops_url || parsed.nifty_analyzer_url) {
-                  applyEndpointsData(parsed);
-                  return;
-                }
-              }
-            } catch (err) {}
-          }
-        }
-      } catch (e) {}
-
-      // Channel 2: GitHub Contents API (Decodes Base64 directly from Git DB, bypassing Fastly 5-min cache)
-      try {
-        const gr = await fetch('https://api.github.com/repos/Mayank9644/cloud-portal/contents/endpoints.json?ref=main&t=' + Date.now(), {
-          cache: 'no-store',
-          headers: { 'Accept': 'application/vnd.github.v3+json' }
-        });
-        if (gr.ok) {
-          const gData = await gr.json();
-          if (gData.content) {
-            const rawJson = decodeURIComponent(escape(atob(gData.content.replace(/\s/g, ''))));
-            const parsed = JSON.parse(rawJson);
-            if (parsed.avatar_ops_url || parsed.nifty_analyzer_url) {
-              applyEndpointsData(parsed);
-              return;
-            }
-          }
-        }
-      } catch (e) {}
-
-      // Channel 3: Fallback Static Endpoints
-      const fallbackUrls = [
-        'https://raw.githubusercontent.com/Mayank9644/cloud-portal/main/endpoints.json?t=' + Date.now(),
-        './endpoints.json?t=' + Date.now()
-      ];
-      for (const u of fallbackUrls) {
-        try {
-          const r = await fetch(u, { cache: 'no-store' });
-          if (r.ok) {
-            const data = await r.json();
-            applyEndpointsData(data);
-            return;
-          }
-        } catch (e) {}
+      const data = await PortalCommon.resolveEndpoints("./endpoints.json");
+      if (data) applyEndpoints(data);
+      else {
+        const updEl = document.getElementById("updated-at");
+        if (updEl) updEl.textContent = "Could not resolve any validated endpoints.";
       }
     }
 
-    // Live Server-Sent Events (SSE): Push updates automatically to screen within 200ms when tunnels rotate!
-    function initRealtimeStream() {
+    function toggleAutoSync() {
+      autoSync = !autoSync;
+      const btn = document.getElementById("btn-toggle-autosync");
+      if (btn) btn.textContent = autoSync ? "🔋 Auto-Sync: ON" : "🔋 Auto-Sync: OFF (Battery Saver)";
+      const meta = document.getElementById("last-sync-meta");
+      if (meta) meta.textContent = autoSync ? "Mode: Auto (portal refresh)" : "Mode: Manual Only (0% Idle Drain)";
+    }
+
+    async function syncGithubNow() {
+      const meta = document.getElementById("commit-meta");
+      if (!daemonBaseUrl) {
+        if (meta) meta.textContent = "Sync unavailable: no host daemon configured (host_daemon_url missing).";
+        return;
+      }
+      // Actions require the daemon token (audit C1). It is asked for each
+      // time and never stored in the page/localStorage.
+      const token = window.prompt("Host daemon token (X-Host-Token):");
+      if (!token) return;
       try {
-        if (!('EventSource' in window)) return;
-        const sse = new EventSource('https://ntfy.sh/fincept_cloudhost_endpoints_9644/sse');
-        sse.onmessage = (event) => {
-          try {
-            const msgObj = JSON.parse(event.data);
-            if (msgObj.message) {
-              const parsed = typeof msgObj.message === 'string' ? JSON.parse(msgObj.message) : msgObj.message;
-              if (parsed.avatar_ops_url || parsed.nifty_analyzer_url) {
-                applyEndpointsData(parsed);
-              }
-            }
-          } catch (e) {}
-        };
-      } catch (e) {}
+        const res = await fetch(daemonBaseUrl + "/api/host/action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Host-Token": token },
+          body: JSON.stringify({ action: "git_sync" }),
+        });
+        const data = await res.json();
+        if (meta) meta.textContent = "git_sync: " + (data.message || ("HTTP " + res.status));
+      } catch (e) {
+        if (meta) meta.textContent = "git_sync failed: daemon unreachable.";
+      }
+    }
+
+    function openLogsModal(tab) {
+      document.getElementById("logs-modal").style.display = "flex";
+      switchLogTab(tab || "nifty");
+    }
+    function closeLogsModal() {
+      document.getElementById("logs-modal").style.display = "none";
+    }
+    async function switchLogTab(tab) {
+      currentLogTab = tab;
+      ["nifty", "avatar", "watchdog"].forEach((t) => {
+        const b = document.getElementById("tab-" + t);
+        if (b) b.classList.toggle("active", t === tab);
+      });
+      const title = document.getElementById("active-log-title");
+      if (title) title.textContent = "(" + tab + ")";
+      const view = document.getElementById("log-viewport");
+      if (!daemonBaseUrl) {
+        view.textContent = "Logs unavailable: no host daemon configured (host_daemon_url missing in endpoints.json).";
+        return;
+      }
+      view.textContent = "Loading logs...";
+      try {
+        // Daemon's real shape (H-9): ?service=<tab>&lines=40, reply has .lines
+        const res = await fetch(daemonBaseUrl + "/api/host/logs?service=" + encodeURIComponent(tab) + "&lines=40", { cache: "no-store" });
+        const data = await res.json();
+        view.textContent = Array.isArray(data.lines) ? data.lines.join("\n") : (data.error || "No log lines.");
+      } catch (e) {
+        view.textContent = "Logs unavailable: daemon unreachable.";
+      }
     }
 
     loadLiveEndpoints();
-    initRealtimeStream();
-    setInterval(loadLiveEndpoints, 12000);
-    setInterval(refreshHostVitals, 30000);
+    setInterval(loadLiveEndpoints, 30000);
+    setInterval(refreshHostVitals, 60000);
   </script>
 </body>
 </html>
