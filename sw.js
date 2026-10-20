@@ -1,10 +1,11 @@
 /* Fincept Cloud Host Control — Service Worker */
-const CACHE_NAME = "fincept-cloud-host-v4";
+const CACHE_NAME = "fincept-cloud-host-v5";
 const SHELL_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./assets/icon.svg"
+  "./assets/icon.svg",
+  "./assets/portal-common.js"
 ];
 
 self.addEventListener("install", (event) => {
@@ -24,7 +25,10 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const reqUrl = new URL(event.request.url);
 
-  // Network-only for live dynamic data (endpoints, APIs, tunnel queries, cache-busting queries)
+  // Network-first for live dynamic data (endpoints, APIs, tunnel queries,
+  // cache-busting queries). Audit M-8: on network failure, fall back to the
+  // cached copy if one exists, otherwise return a JSON error response
+  // instead of an unhandled rejection.
   if (
     reqUrl.pathname.endsWith("endpoints.json") ||
     reqUrl.pathname.includes("/api/") ||
@@ -32,7 +36,16 @@ self.addEventListener("fetch", (event) => {
     reqUrl.hostname.includes("trycloudflare.com") ||
     event.request.method !== "GET"
   ) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch(async () => {
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+        return new Response(
+          JSON.stringify({ error: "offline", detail: "network request failed and no cache available" }),
+          { status: 503, headers: { "Content-Type": "application/json" } }
+        );
+      })
+    );
     return;
   }
 
@@ -47,7 +60,7 @@ self.addEventListener("fetch", (event) => {
           }
           return networkResponse;
         })
-        .catch(() => cachedResponse);
+        .catch(() => cachedResponse || new Response("offline", { status: 503 }));
 
       return cachedResponse || fetchPromise;
     })
