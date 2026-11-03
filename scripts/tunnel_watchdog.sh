@@ -92,7 +92,7 @@ publish_endpoints() {
         host_daemon_line=$(grep -oE '"host_daemon_url": *"[^"]+"' "$PORTAL_DIR/endpoints.json" | head -1)
     fi
     cd "$PORTAL_DIR" || { log_msg "[Watcher-AutoSync] ERROR: cannot cd to $PORTAL_DIR"; return 1; }
-    if ! git pull --ff-only --quiet; then
+    if ! git pull --ff-only origin main --quiet; then
         log_msg "[Watcher-AutoSync] ERROR: git pull --ff-only failed; skipping publish this cycle."
         return 1
     fi
@@ -126,7 +126,7 @@ publish_endpoints() {
         return 0
     fi
     log_msg "[Watcher-AutoSync] ERROR: git push failed; retrying once after ff-pull."
-    git pull --ff-only --quiet || true
+    git pull --ff-only origin main --quiet || true
     if git push origin main --quiet; then
         log_msg "[Watcher-AutoSync] Pushed endpoints to GitHub on retry (verified push)."
         return 0
