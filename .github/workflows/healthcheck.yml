@@ -1,0 +1,43 @@
+name: healthcheck
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe live URLs from endpoints.json
+        id: probe
+        run: |
+          set -u
+          fail=0
+          for key in nifty_analyzer_url avatar_ops_url; do
+            url=$(python3 -c "import json;print(json.load(open('endpoints.json')).get('$key',''))")
+            if [ -z "$url" ]; then echo "no url for $key"; fail=1; continue; fi
+            code=$(curl -s -o /dev/null -m 10 -w "%{http_code}" "$url" || echo "000")
+            echo "$key $url -> $code"
+            if [ "$code" = "000" ] || [ "$code" -ge 500 ]; then fail=1; fi
+          done
+          echo "fail=$fail" >> "$GITHUB_OUTPUT"
+      - name: Open or update the DOWN issue
+        if: steps.probe.outputs.fail == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NTFY_ALERT_TOPIC: ${{ secrets.NTFY_ALERT_TOPIC }}
+        run: |
+          title="Cloud host DOWN"
+          existing=$(gh issue list --search "$title in:title state:open" --json number --jq '.[0].number // empty')
+          body="Scheduled healthcheck: one or more cloud host URLs are unreachable. Check the phone (battery/Termux), then the tunnels. This alert cannot wake the phone."
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body ($(date -u +%FT%TZ))"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi
+          if [ -n "${NTFY_ALERT_TOPIC:-}" ]; then
+            curl -s -X POST -d "Cloud host DOWN - see GitHub issue" "https://ntfy.sh/$NTFY_ALERT_TOPIC" || true
+          fi
