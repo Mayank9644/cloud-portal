@@ -4,7 +4,10 @@
 # Open the Termux:Boot app once after installing it, or Android will not
 # deliver the boot broadcast.
 export PATH=/data/data/com.termux/files/usr/bin:${PATH:-}
-HOME_DIR="${HOME:-/data/data/com.termux/files/home}"
+if [ -z "${HOME:-}" ] || [ "$HOME" = "/data/user/0/com.termux" ] || [ "$HOME" = "/data/data/com.termux" ]; then
+    export HOME="/data/data/com.termux/files/home"
+fi
+HOME_DIR="$HOME"
 mkdir -p "$HOME_DIR/apps/logs"
 termux-wake-lock || true
 {

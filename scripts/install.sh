@@ -6,9 +6,11 @@ export PATH=/data/data/com.termux/files/usr/bin:${PATH:-}
 APP_DIR="${APP_DIR:-$HOME/apps/cloud-portal}"
 SRC_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 mkdir -p "$APP_DIR/scripts" "$APP_DIR/scripts/android" "$HOME/apps/logs" "$HOME/apps"
-cp "$SRC_DIR/host_daemon.py" "$APP_DIR/host_daemon.py"
-cp "$SRC_DIR/scripts/"*.sh "$APP_DIR/scripts/"
-cp "$SRC_DIR/scripts/android/"*.sh "$APP_DIR/scripts/android/" 2>/dev/null || true
+if [ "$SRC_DIR" != "$APP_DIR" ]; then
+    cp "$SRC_DIR/host_daemon.py" "$APP_DIR/host_daemon.py"
+    cp "$SRC_DIR/scripts/"*.sh "$APP_DIR/scripts/"
+    cp "$SRC_DIR/scripts/android/"*.sh "$APP_DIR/scripts/android/" 2>/dev/null || true
+fi
 # Backwards-compatible flat copies the tmux windows have always referenced:
 cp "$SRC_DIR/scripts/tunnel_watchdog.sh" "$HOME/apps/tunnel_watchdog.sh"
 cp "$SRC_DIR/scripts/run_tunnel_avatar.sh" "$HOME/apps/run_tunnel_avatar.sh"
