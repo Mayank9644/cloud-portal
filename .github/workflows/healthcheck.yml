@@ -16,11 +16,16 @@ jobs:
         run: |
           set -u
           fail=0
-          for key in nifty_analyzer_url avatar_ops_url; do
+          for key in nifty_analyzer_url avatar_ops_url host_daemon_url; do
             url=$(python3 -c "import json;print(json.load(open('endpoints.json')).get('$key',''))")
-            if [ -z "$url" ]; then echo "no url for $key"; fail=1; continue; fi
-            code=$(curl -s -o /dev/null -m 10 -w "%{http_code}" "$url" || echo "000")
-            echo "$key $url -> $code"
+            if [ -z "$url" ]; then
+              if [ "$key" = "host_daemon_url" ]; then continue; fi
+              echo "no url for $key"; fail=1; continue
+            fi
+            probe_url="$url"
+            if [ "$key" = "host_daemon_url" ]; then probe_url="$url/health"; fi
+            code=$(curl -s -o /dev/null -m 10 -w "%{http_code}" "$probe_url" || echo "000")
+            echo "$key $probe_url -> $code"
             if [ "$code" = "000" ] || [ "$code" -ge 500 ]; then fail=1; fi
           done
           echo "fail=$fail" >> "$GITHUB_OUTPUT"
