@@ -365,7 +365,17 @@ class HostDaemonHandler(BaseHTTPRequestHandler):
 
     def _check_action_auth(self):
         """Returns None if authorised, else (status, payload) to send."""
-        expected = os.environ.get("HOST_DAEMON_TOKEN", "")
+        expected = os.environ.get("HOST_DAEMON_TOKEN", "").strip()
+        if not expected:
+            local_env = os.path.join(os.path.dirname(__file__), "scripts", "local.env")
+            if os.path.exists(local_env):
+                try:
+                    with open(local_env) as f:
+                        for line in f:
+                            if line.startswith("HOST_DAEMON_TOKEN="):
+                                expected = line.split("=", 1)[1].strip().strip('"').strip("'")
+                except Exception:
+                    pass
         if not expected:
             return 503, {"error": "actions disabled: HOST_DAEMON_TOKEN not set", "status": "error"}
         provided = self.headers.get("X-Host-Token", "")

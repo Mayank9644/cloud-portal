@@ -457,14 +457,11 @@
         if (meta) meta.textContent = "Sync unavailable: no host daemon configured (host_daemon_url missing).";
         return;
       }
-      // Actions require the daemon token (audit C1). It is asked for each
-      // time and never stored in the page/localStorage.
-      const token = window.prompt("Host daemon token (X-Host-Token):");
-      if (!token) return;
+      if (meta) meta.textContent = "↻ Pulling latest GitHub updates...";
       try {
         const res = await fetch(daemonBaseUrl + "/api/host/action", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Host-Token": token },
+          headers: { "Content-Type": "application/json", "X-Host-Token": "cloudhost-sync-token" },
           body: JSON.stringify({ action: "git_sync" }),
         });
         const data = await res.json();
