@@ -1,6 +1,7 @@
 {
-  "avatar_ops_url": "https://symptoms-starring-plaza-ensure.trycloudflare.com",
+  "avatar_ops_url": "https://healthy-ethical-phoenix-allowing.trycloudflare.com",
   "nifty_analyzer_url": "https://dedicated-dependence-safely-gene.trycloudflare.com",
+  "vitals": {"status": "online", "device": "Samsung Galaxy Z Fold3 5G (SM-F926N)", "battery": {"capacity_pct": 50, "status": "CHARGING", "temperature_c": 32.2, "is_ac_power": true}, "memory": {"total_mb": 11357, "used_mb": 5966, "free_mb": 5391, "used_pct": 52.5}, "system": {"uptime_seconds": 203659, "uptime_display": "2d 8h 34m"}, "services": {"nifty_analyzer": {"port": 5001, "alive": false, "tcp_alive": true, "http_status": null}, "avatar_ops": {"port": 8080, "alive": false, "tcp_alive": false, "http_status": null}, "watchdog": {"alive": true}}, "warning": null, "sources": {"battery": "real", "battery_via": "termux-api", "memory": "real", "uptime": "real"}, "timestamp": 1793906865},
   "host": "Samsung Galaxy Z Fold3 5G (SM-F926N) - 24/7 Cloud Host",
-  "updated_at": "2026-11-03 16:41:19 IST"
+  "updated_at": "2026-11-06 00:57:43 IST"
 }
