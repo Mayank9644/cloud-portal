@@ -95,6 +95,26 @@ def _sys_battery():
             got = True
     except Exception:
         return None
+    if out["temperature_c"] is None:
+        try:
+            for z in range(10):
+                tz = f"/sys/class/thermal/thermal_zone{z}"
+                type_file = os.path.join(tz, "type")
+                temp_file = os.path.join(tz, "temp")
+                if os.path.exists(type_file) and os.path.exists(temp_file):
+                    with open(type_file) as tf:
+                        t_type = tf.read().strip().lower()
+                    if "batt" in t_type or "cpu" in t_type or "soc" in t_type or z == 0:
+                        with open(temp_file) as vf:
+                            val = int(vf.read().strip())
+                            if val > 1000:
+                                val = round(val / 1000.0, 1)
+                            if 15.0 <= val <= 95.0:
+                                out["temperature_c"] = val
+                                got = True
+                                break
+        except Exception:
+            pass
     if not got:
         return None
     if out["status"] is not None:
@@ -142,11 +162,19 @@ def get_memory_info():
 
 
 def get_uptime_info():
-    """Returns (info_dict, source). Reads /proc/uptime only; no fallbacks."""
+    """Returns (info_dict, source). Reads CLOCK_BOOTTIME or /proc/uptime."""
+    up_secs = None
     try:
         with open("/proc/uptime") as f:
             up_secs = int(float(f.read().split()[0]))
     except Exception:
+        up_secs = None
+    if up_secs is None and hasattr(time, "CLOCK_BOOTTIME"):
+        try:
+            up_secs = int(time.clock_gettime(time.CLOCK_BOOTTIME))
+        except Exception:
+            up_secs = None
+    if up_secs is None:
         return {"uptime_seconds": None, "uptime_display": None}, "unavailable"
     days = up_secs // 86400
     hours = (up_secs % 86400) // 3600

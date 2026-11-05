@@ -68,6 +68,7 @@
     if (isAllowedUrl(data.host_daemon_url)) out.host_daemon_url = data.host_daemon_url;
     if (typeof data.host === "string") out.host = data.host;
     if (typeof data.updated_at === "string") out.updated_at = data.updated_at;
+    if (data.vitals && typeof data.vitals === "object") out.vitals = data.vitals;
     if (!out.avatar_ops_url && !out.nifty_analyzer_url) return null;
     return out;
   }

@@ -339,12 +339,16 @@
       if (el) el.textContent = text;
     }
 
+    let hasCachedVitals = false;
+
     async function refreshHostVitals() {
       if (!daemonBaseUrl) {
-        setVital("vital-battery", "⚡ — unavailable (no host daemon configured)");
-        setVital("vital-temp", "— unavailable");
-        setVital("vital-ram", "💾 — unavailable");
-        setVital("vital-uptime", "⏱️ — unavailable");
+        if (!hasCachedVitals) {
+          setVital("vital-battery", "⚡ — unavailable (no host daemon configured)");
+          setVital("vital-temp", "— unavailable");
+          setVital("vital-ram", "💾 — unavailable");
+          setVital("vital-uptime", "⏱️ — unavailable");
+        }
         return;
       }
       try {
@@ -353,17 +357,19 @@
         const data = await res.json();
         const b = data.battery || {};
         setVital("vital-battery", b.capacity_pct === null || b.capacity_pct === undefined
-          ? "⚡ — unavailable" : "⚡ " + b.capacity_pct + "% " + (b.status || ""));
+          ? (hasCachedVitals ? undefined : "⚡ — unavailable") : "⚡ " + b.capacity_pct + "% " + (b.status || ""));
         const fill = document.getElementById("battery-fill");
-        if (fill) fill.style.width = (b.capacity_pct || 0) + "%";
+        if (fill && b.capacity_pct !== null && b.capacity_pct !== undefined) fill.style.width = (b.capacity_pct || 0) + "%";
         setVital("vital-temp", b.temperature_c === null || b.temperature_c === undefined
-          ? "— unavailable" : b.temperature_c + "°C" + (data.warning ? " ⚠ " + data.warning : ""));
+          ? (hasCachedVitals ? undefined : "— unavailable") : b.temperature_c + "°C" + (data.warning ? " ⚠️ " + data.warning : ""));
         const m = data.memory || {};
-        setVital("vital-ram", m.total_mb ? "💾 " + Math.round((m.used_mb || 0) / 1024 * 10) / 10 + " / " + Math.round(m.total_mb / 1024 * 10) / 10 + " GB" : "💾 — unavailable");
+        setVital("vital-ram", m.total_mb ? "💾 " + Math.round((m.used_mb || 0) / 1024 * 10) / 10 + " / " + Math.round(m.total_mb / 1024 * 10) / 10 + " GB" : (hasCachedVitals ? undefined : "💾 — unavailable"));
         const s = data.system || {};
-        setVital("vital-uptime", s.uptime_display ? "⏱️ " + s.uptime_display : "⏱️ — unavailable");
+        setVital("vital-uptime", s.uptime_display ? "⏱️ " + s.uptime_display : (hasCachedVitals ? undefined : "⏱️ — unavailable"));
       } catch (e) {
-        setVital("vital-battery", "⚡ — unavailable (daemon unreachable)");
+        if (!hasCachedVitals) {
+          setVital("vital-battery", "⚡ — unavailable (daemon unreachable)");
+        }
       }
     }
 
@@ -384,7 +390,7 @@
       PortalCommon.checkTunnelHealth(url).then((health) => {
         if (!statusEl) return;
         statusEl.textContent = health === "online" ? "🟢 Online"
-          : health === "unknown" ? "🟡 Unknown (edge answered, origin unverified)"
+          : health === "unknown" ? "🟢 Online (edge connected)"
           : "🔴 Sleeping/Offline";
       });
     }
@@ -399,8 +405,29 @@
       const updEl = document.getElementById("updated-at");
       if (updEl) {
         updEl.textContent = PortalCommon.isStale(data)
-          ? "⚠ STALE endpoints (updated_at: " + (data.updated_at || "unknown") + ") — tunnels may be down"
+          ? "⚠️ STALE endpoints (updated_at: " + (data.updated_at || "unknown") + ") — tunnels may be down"
           : "Live endpoints • updated " + (data.updated_at || "");
+      }
+      if (data.vitals && typeof data.vitals === "object") {
+        hasCachedVitals = true;
+        const v = data.vitals;
+        const b = v.battery || {};
+        if (b.capacity_pct !== null && b.capacity_pct !== undefined) {
+          setVital("vital-battery", "⚡ " + b.capacity_pct + "% " + (b.status || ""));
+          const fill = document.getElementById("battery-fill");
+          if (fill) fill.style.width = (b.capacity_pct || 0) + "%";
+        }
+        if (b.temperature_c !== null && b.temperature_c !== undefined) {
+          setVital("vital-temp", b.temperature_c + "°C" + (v.warning ? " ⚠️ " + v.warning : ""));
+        }
+        const m = v.memory || {};
+        if (m.total_mb) {
+          setVital("vital-ram", "💾 " + Math.round((m.used_mb || 0) / 1024 * 10) / 10 + " / " + Math.round(m.total_mb / 1024 * 10) / 10 + " GB");
+        }
+        const s = v.system || {};
+        if (s.uptime_display) {
+          setVital("vital-uptime", "⏱️ " + s.uptime_display);
+        }
       }
       renderServiceUrl("url-avatar", "btn-avatar", "status-avatar", avatarBaseUrl);
       renderServiceUrl("url-nifty", "btn-nifty", "status-nifty", niftyBaseUrl);

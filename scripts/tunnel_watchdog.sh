@@ -48,6 +48,7 @@ rotate_logs() {
     rotate_one "$LOG_DIR/watchdog.log"
     rotate_one "$LOG_DIR/tunnel-avatar.log"
     rotate_one "$LOG_DIR/tunnel-nifty.log"
+    rotate_one "$LOG_DIR/tunnel-daemon.log"
     rotate_one "$LOG_DIR/host_daemon.log"
     rotate_one "$LOG_DIR/nifty-analyzer.log"
     rotate_one "$LOG_DIR/avatar-ops.log"
@@ -77,20 +78,25 @@ is_failure_code() {
 recycle_service() {
     # Recycle ONLY this service's cloudflared: its cmdline carries its port.
     local svc="$1" port
-    if [ "$svc" = "nifty" ]; then port=5001; else port=8080; fi
+    if [ "$svc" = "nifty" ]; then port=5001; elif [ "$svc" = "daemon" ]; then port=8088; else port=8080; fi
     log_msg "[Watcher-Healer] Recycling ONLY the $svc tunnel (port $port) after sustained failure."
     pkill -f "127.0.0.1:$port" 2>/dev/null || true
     : > "$LOG_DIR/tunnel-$svc.log"
 }
 
 publish_endpoints() {
-    # $1 = avatar url, $2 = nifty url. Returns 0 only on a VERIFIED push.
-    local cur_avatar="$1" cur_nifty="$2"
+    # $1 = avatar url, $2 = nifty url, $3 = daemon url (optional). Returns 0 only on a VERIFIED push.
+    local cur_avatar="$1" cur_nifty="$2" cur_daemon="${3:-}"
     local ts host_daemon_line=""
     ts=$(date '+%Y-%m-%d %H:%M:%S %Z')
-    if grep -q '"host_daemon_url"' "$PORTAL_DIR/endpoints.json" 2>/dev/null; then
+    if [ -n "$cur_daemon" ]; then
+        host_daemon_line="\"host_daemon_url\": \"$cur_daemon\""
+    elif grep -q '"host_daemon_url"' "$PORTAL_DIR/endpoints.json" 2>/dev/null; then
         host_daemon_line=$(grep -oE '"host_daemon_url": *"[^"]+"' "$PORTAL_DIR/endpoints.json" | head -1)
     fi
+    local vitals_json
+    vitals_json=$(python3 -c "import sys; sys.path.insert(0, '$PORTAL_DIR'); import host_daemon, json; print(json.dumps(host_daemon.get_vitals()))" 2>/dev/null || echo "{}")
+
     cd "$PORTAL_DIR" || { log_msg "[Watcher-AutoSync] ERROR: cannot cd to $PORTAL_DIR"; return 1; }
     if ! git pull --ff-only origin main --quiet; then
         log_msg "[Watcher-AutoSync] ERROR: git pull --ff-only failed; skipping publish this cycle."
@@ -101,6 +107,9 @@ publish_endpoints() {
         echo "  \"avatar_ops_url\": \"$cur_avatar\","
         echo "  \"nifty_analyzer_url\": \"$cur_nifty\","
         if [ -n "$host_daemon_line" ]; then echo "  $host_daemon_line,"; fi
+        if [ -n "$vitals_json" ] && [ "$vitals_json" != "{}" ]; then
+            echo "  \"vitals\": $vitals_json,"
+        fi
         echo "  \"host\": \"Samsung Galaxy Z Fold3 5G (SM-F926N) - 24/7 Cloud Host\","
         echo "  \"updated_at\": \"$ts\""
         echo "}"
@@ -154,13 +163,15 @@ main_loop() {
         if [ "$TUNNEL_MODE" != "named" ]; then
             PUB_AVATAR=$(grep -oE '"avatar_ops_url": *"[^"]+"' "$PORTAL_DIR/endpoints.json" 2>/dev/null | cut -d'"' -f4)
             PUB_NIFTY=$(grep -oE '"nifty_analyzer_url": *"[^"]+"' "$PORTAL_DIR/endpoints.json" 2>/dev/null | cut -d'"' -f4)
+            PUB_DAEMON=$(grep -oE '"host_daemon_url": *"[^"]+"' "$PORTAL_DIR/endpoints.json" 2>/dev/null | cut -d'"' -f4)
             CUR_AVATAR=$(grep -oE "https://[a-zA-Z0-9-]+\.trycloudflare\.com" "$LOG_DIR/tunnel-avatar.log" 2>/dev/null | tail -n 1)
             CUR_NIFTY=$(grep -oE "https://[a-zA-Z0-9-]+\.trycloudflare\.com" "$LOG_DIR/tunnel-nifty.log" 2>/dev/null | tail -n 1)
+            CUR_DAEMON=$(grep -oE "https://[a-zA-Z0-9-]+\.trycloudflare\.com" "$LOG_DIR/tunnel-daemon.log" 2>/dev/null | tail -n 1)
 
             if [ -n "$CUR_NIFTY" ] && [ -n "$CUR_AVATAR" ]; then
-                if [ "$CUR_NIFTY" != "$PUB_NIFTY" ] || [ "$CUR_AVATAR" != "$PUB_AVATAR" ]; then
-                    log_msg "[Watcher-AutoSync] URL change detected: Nifty: $PUB_NIFTY -> $CUR_NIFTY | Avatar: $PUB_AVATAR -> $CUR_AVATAR"
-                    if publish_endpoints "$CUR_AVATAR" "$CUR_NIFTY"; then
+                if [ "$CUR_NIFTY" != "$PUB_NIFTY" ] || [ "$CUR_AVATAR" != "$PUB_AVATAR" ] || { [ -n "$CUR_DAEMON" ] && [ "$CUR_DAEMON" != "$PUB_DAEMON" ]; }; then
+                    log_msg "[Watcher-AutoSync] URL change detected: Nifty: $PUB_NIFTY -> $CUR_NIFTY | Avatar: $PUB_AVATAR -> $CUR_AVATAR | Daemon: $PUB_DAEMON -> $CUR_DAEMON"
+                    if publish_endpoints "$CUR_AVATAR" "$CUR_NIFTY" "$CUR_DAEMON"; then
                         FAIL_SINCE_NIFTY=0; FAIL_SINCE_AVATAR=0
                         LAST_RECYCLE_TIME=$(date +%s)
                     else

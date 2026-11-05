@@ -15,6 +15,7 @@ fi
 cp "$SRC_DIR/scripts/tunnel_watchdog.sh" "$HOME/apps/tunnel_watchdog.sh"
 cp "$SRC_DIR/scripts/run_tunnel_avatar.sh" "$HOME/apps/run_tunnel_avatar.sh"
 cp "$SRC_DIR/scripts/run_tunnel_nifty.sh" "$HOME/apps/run_tunnel_nifty.sh"
+cp "$SRC_DIR/scripts/run_tunnel_daemon.sh" "$HOME/apps/run_tunnel_daemon.sh"
 cp "$SRC_DIR/scripts/github_auto_deploy.sh" "$HOME/apps/github_auto_deploy.sh"
 cp "$SRC_DIR/scripts/start_services.sh" "$HOME/apps/start_services.sh"
 if [ ! -f "$APP_DIR/scripts/local.env" ] && [ -f "$SRC_DIR/scripts/local.env.example" ]; then

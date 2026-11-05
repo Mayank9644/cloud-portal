@@ -187,21 +187,19 @@
       if (PortalCommon.isStale(data)) {
         setStatus("⚠ Endpoints are STALE (updated " + (data.updated_at || "unknown") + "). Probing before connecting…");
       }
-      const health = await PortalCommon.checkTunnelHealth(targetUrl + HEALTH_SUFFIX);
-      if (health === "online") {
-        setStatus("Tunnel healthy — connecting…");
-        window.location.replace(targetUrl);
-        return;
-      }
-      // Not healthy: offer a manual bypass link (validated URL, set via the
-      // href property, never innerHTML) and keep retrying.
       const row = document.getElementById("actionButtons");
       const bypass = document.getElementById("btnBypass");
       if (row && bypass) {
         bypass.href = targetUrl;
         row.style.display = "flex";
       }
-      setStatus("Tunnel is " + health + " — not redirecting to a possibly-dead URL. Retrying… (attempt " + attempts + ")");
+      const isFresh = !PortalCommon.isStale(data);
+      if (health === "online" || (health === "unknown" && isFresh)) {
+        setStatus("Tunnel healthy — connecting…");
+        window.location.replace(targetUrl);
+        return;
+      }
+      setStatus("Tunnel is " + health + " — retrying… (attempt " + attempts + ")");
       scheduleRetry();
     }
 

@@ -11,7 +11,10 @@
 set -u
 export PATH=/data/data/com.termux/files/usr/bin:${PATH:-}
 export TMPDIR=/data/data/com.termux/files/usr/tmp
-HOME_DIR="${HOME:-/data/data/com.termux/files/home}"
+if [ -z "${HOME:-}" ] || [ "$HOME" = "/data/user/0/com.termux" ] || [ "$HOME" = "/data/data/com.termux" ]; then
+    export HOME="/data/data/com.termux/files/home"
+fi
+HOME_DIR="$HOME"
 APPS="$HOME_DIR/apps"
 LOGS="$APPS/logs"
 TUNNEL_MODE="${TUNNEL_MODE:-quick}"
@@ -70,7 +73,8 @@ if [ "$TUNNEL_MODE" = "named" ]; then
 else
     tmux new-window -t cloudhost:4 -n tunnel-avatar "bash $APPS/cloud-portal/scripts/run_tunnel_avatar.sh"
     tmux new-window -t cloudhost:5 -n tunnel-nifty "bash $APPS/cloud-portal/scripts/run_tunnel_nifty.sh"
-    NEXT=6
+    tmux new-window -t cloudhost:6 -n tunnel-daemon "bash $APPS/cloud-portal/scripts/run_tunnel_daemon.sh"
+    NEXT=7
 fi
 
 # Last window: watchdog
