@@ -293,7 +293,12 @@ def _poll_service(service_key, timeout_sec=None):
 
 def do_git_sync():
     """Real git pull --ff-only in the portal repo. Returns (ok, message, output_tail)."""
-    repo_dir = os.path.expanduser(os.environ.get("PORTAL_REPO_DIR", "~/apps/cloud-portal"))
+    default_dir = (
+        "/data/data/com.termux/files/home/apps/cloud-portal"
+        if os.path.isdir("/data/data/com.termux/files/home/apps/cloud-portal")
+        else os.path.expanduser("~/apps/cloud-portal")
+    )
+    repo_dir = os.environ.get("PORTAL_REPO_DIR", default_dir)
     try:
         proc = subprocess.run(
             ["git", "-C", repo_dir, "pull", "--ff-only"],
