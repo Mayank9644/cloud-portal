@@ -1,8 +1,8 @@
 {
-  "avatar_ops_url": "https://ensures-initiated-word-seasonal.trycloudflare.com",
-  "nifty_analyzer_url": "https://para-facility-naturals-white.trycloudflare.com",
-  "host_daemon_url": "https://prayer-prepaid-puzzles-kinda.trycloudflare.com",
-  "vitals": {"status": "online", "device": "Samsung Galaxy Z Fold3 5G (SM-F926N)", "battery": {"capacity_pct": 1, "status": "DISCHARGING", "temperature_c": 37.9, "is_ac_power": false}, "memory": {"total_mb": 11357, "used_mb": 8601, "free_mb": 2756, "used_pct": 75.7}, "system": {"uptime_seconds": 263514, "uptime_display": "3d 1h 11m"}, "services": {"nifty_analyzer": {"port": 5001, "alive": true, "tcp_alive": true, "http_status": 200}, "avatar_ops": {"port": 8080, "alive": true, "tcp_alive": true, "http_status": 200}, "watchdog": {"alive": true}}, "warning": null, "sources": {"battery": "real", "battery_via": "termux-api", "memory": "real", "uptime": "real"}, "timestamp": 1793966718},
+  "avatar_ops_url": "https://empty-condos-becomes-favorite.trycloudflare.com",
+  "nifty_analyzer_url": "https://multi-purse-pie-proxy.trycloudflare.com",
+  "host_daemon_url": "https://than-fishing-defines-computers.trycloudflare.com",
+  "vitals": {"status": "online", "device": "Samsung Galaxy Z Fold3 5G (SM-F926N)", "battery": {"capacity_pct": 2, "status": "CHARGING", "temperature_c": 33.2, "is_ac_power": true}, "memory": {"total_mb": 11357, "used_mb": 7111, "free_mb": 4246, "used_pct": 62.6}, "system": {"uptime_seconds": 196, "uptime_display": "0d 0h 3m"}, "services": {"nifty_analyzer": {"port": 5001, "alive": true, "tcp_alive": true, "http_status": 200}, "avatar_ops": {"port": 8080, "alive": true, "tcp_alive": true, "http_status": 200}, "watchdog": {"alive": true}}, "warning": null, "sources": {"battery": "real", "battery_via": "termux-api", "memory": "real", "uptime": "real"}, "timestamp": 1793970395},
   "host": "Samsung Galaxy Z Fold3 5G (SM-F926N) - 24/7 Cloud Host",
-  "updated_at": "2026-11-06 17:35:15 IST"
+  "updated_at": "2026-11-06 18:36:33 IST"
 }
