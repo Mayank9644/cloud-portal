@@ -1,8 +1,8 @@
 {
-  "avatar_ops_url": "https://swim-includes-institution-thermal.trycloudflare.com",
-  "nifty_analyzer_url": "https://adams-sublime-award-travelers.trycloudflare.com",
-  "host_daemon_url": "https://external-timber-trains-informative.trycloudflare.com",
-  "vitals": {"status": "online", "device": "Samsung Galaxy Z Fold3 5G (SM-F926N)", "battery": {"capacity_pct": 18, "status": "DISCHARGING", "temperature_c": 32.8, "is_ac_power": false}, "memory": {"total_mb": 11357, "used_mb": 7384, "free_mb": 3973, "used_pct": 65.0}, "system": {"uptime_seconds": 115785, "uptime_display": "1d 8h 9m"}, "services": {"nifty_analyzer": {"port": 5001, "alive": true, "tcp_alive": true, "http_status": 200}, "avatar_ops": {"port": 8080, "alive": true, "tcp_alive": true, "http_status": 200}, "watchdog": {"alive": true}}, "warning": null, "sources": {"battery": "real", "battery_via": "termux-api", "memory": "real", "uptime": "real"}, "timestamp": 1794561823},
+  "avatar_ops_url": "https://seeing-silly-earrings-pastor.trycloudflare.com",
+  "nifty_analyzer_url": "https://undertake-utility-annie-club.trycloudflare.com",
+  "host_daemon_url": "https://wishing-spears-retrieved-discuss.trycloudflare.com",
+  "vitals": {"status": "online", "device": "Samsung Galaxy Z Fold3 5G (SM-F926N)", "battery": {"capacity_pct": 16, "status": "DISCHARGING", "temperature_c": 34.6, "is_ac_power": false}, "memory": {"total_mb": 11357, "used_mb": 7256, "free_mb": 4101, "used_pct": 63.9}, "system": {"uptime_seconds": 116313, "uptime_display": "1d 8h 18m"}, "services": {"nifty_analyzer": {"port": 5001, "alive": true, "tcp_alive": true, "http_status": 200}, "avatar_ops": {"port": 8080, "alive": true, "tcp_alive": true, "http_status": 200}, "watchdog": {"alive": true}}, "warning": null, "sources": {"battery": "real", "battery_via": "termux-api", "memory": "real", "uptime": "real"}, "timestamp": 1794562351},
   "host": "Samsung Galaxy Z Fold3 5G (SM-F926N) - 24/7 Cloud Host",
-  "updated_at": "2026-11-13 14:53:41 IST"
+  "updated_at": "2026-11-13 15:02:30 IST"
 }
