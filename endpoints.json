@@ -1,8 +1,8 @@
 {
   "avatar_ops_url": "https://adjacent-finishing-offer-separated.trycloudflare.com",
-  "nifty_analyzer_url": "https://representing-manufacturer-travelling-plus.trycloudflare.com",
+  "nifty_analyzer_url": "https://nearby-grab-snapshot-col.trycloudflare.com",
   "host_daemon_url": "https://wishing-spears-retrieved-discuss.trycloudflare.com",
-  "vitals": {"status": "online", "device": "Samsung Galaxy Z Fold3 5G (SM-F926N)", "battery": {"capacity_pct": 55, "status": "DISCHARGING", "temperature_c": 32.0, "is_ac_power": false}, "memory": {"total_mb": 11357, "used_mb": 8304, "free_mb": 3053, "used_pct": 73.1}, "system": {"uptime_seconds": 807669, "uptime_display": "9d 8h 21m"}, "services": {"nifty_analyzer": {"port": 5001, "alive": false, "tcp_alive": false, "http_status": null}, "avatar_ops": {"port": 8080, "alive": true, "tcp_alive": true, "http_status": 200}, "watchdog": {"alive": true}}, "warning": null, "sources": {"battery": "real", "battery_via": "termux-api", "memory": "real", "uptime": "real"}, "timestamp": 1795253708},
+  "vitals": {"status": "online", "device": "Samsung Galaxy Z Fold3 5G (SM-F926N)", "battery": {"capacity_pct": 55, "status": "DISCHARGING", "temperature_c": 32.0, "is_ac_power": false}, "memory": {"total_mb": 11357, "used_mb": 8193, "free_mb": 3164, "used_pct": 72.1}, "system": {"uptime_seconds": 807883, "uptime_display": "9d 8h 24m"}, "services": {"nifty_analyzer": {"port": 5001, "alive": false, "tcp_alive": false, "http_status": null}, "avatar_ops": {"port": 8080, "alive": true, "tcp_alive": true, "http_status": 200}, "watchdog": {"alive": true}}, "warning": null, "sources": {"battery": "real", "battery_via": "termux-api", "memory": "real", "uptime": "real"}, "timestamp": 1795253922},
   "host": "Samsung Galaxy Z Fold3 5G (SM-F926N) - 24/7 Cloud Host",
-  "updated_at": "2026-11-21 15:05:06 IST"
+  "updated_at": "2026-11-21 15:08:40 IST"
 }
