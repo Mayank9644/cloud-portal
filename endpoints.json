@@ -1,8 +1,8 @@
 {
   "avatar_ops_url": "https://mysql-libraries-tracked-structure.trycloudflare.com",
-  "nifty_analyzer_url": "https://lyric-slim-essays-stored.trycloudflare.com",
+  "nifty_analyzer_url": "https://nerve-optical-sunday-hope.trycloudflare.com",
   "host_daemon_url": "https://wishing-spears-retrieved-discuss.trycloudflare.com",
-  "vitals": {"status": "online", "device": "Samsung Galaxy Z Fold3 5G (SM-F926N)", "battery": {"capacity_pct": 89, "status": "NOT_CHARGING", "temperature_c": 27.0, "is_ac_power": true}, "memory": {"total_mb": 11357, "used_mb": 6797, "free_mb": 4560, "used_pct": 59.8}, "system": {"uptime_seconds": 864859, "uptime_display": "10d 0h 14m"}, "services": {"nifty_analyzer": {"port": 5001, "alive": false, "tcp_alive": false, "http_status": null}, "avatar_ops": {"port": 8080, "alive": true, "tcp_alive": true, "http_status": 200}, "watchdog": {"alive": true}}, "warning": null, "sources": {"battery": "real", "battery_via": "termux-api", "memory": "real", "uptime": "real"}, "timestamp": 1795310897},
+  "vitals": {"status": "online", "device": "Samsung Galaxy Z Fold3 5G (SM-F926N)", "battery": {"capacity_pct": 89, "status": "NOT_CHARGING", "temperature_c": 27.0, "is_ac_power": true}, "memory": {"total_mb": 11357, "used_mb": 6810, "free_mb": 4547, "used_pct": 60.0}, "system": {"uptime_seconds": 865075, "uptime_display": "10d 0h 17m"}, "services": {"nifty_analyzer": {"port": 5001, "alive": false, "tcp_alive": false, "http_status": null}, "avatar_ops": {"port": 8080, "alive": true, "tcp_alive": true, "http_status": 200}, "watchdog": {"alive": true}}, "warning": null, "sources": {"battery": "real", "battery_via": "termux-api", "memory": "real", "uptime": "real"}, "timestamp": 1795311114},
   "host": "Samsung Galaxy Z Fold3 5G (SM-F926N) - 24/7 Cloud Host",
-  "updated_at": "2026-11-22 06:58:15 IST"
+  "updated_at": "2026-11-22 07:01:53 IST"
 }
